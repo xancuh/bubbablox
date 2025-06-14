@@ -33,7 +33,7 @@ and change that to:
 
 ``` "Postgres": "Host=127.0.0.1; Database=The database you want to use, if you want to use the default one, make this 'postgres'; Password=your Postgres password you set in the setup; Username=postgres; Maximum Pool Size=20",```
 
-Now press ```ctrl + h``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\ 
+Now press ```ctrl + h``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\```
 to 
 ```C:\\whereever your ECS folder is\\services\\```
 
