@@ -6,4 +6,5 @@ timeout /t 2 >nul
 start /b cmd /c "cd /d renderer && call run.bat"
 start /b cmd /c "cd /d AssetValidationServiceV2 && call run.bat"
 start cmd /c "cd /d Roblox/Roblox.Website && run.bat"
+start cmd /c "cd /d webserver/apache/bin && httpd.exe"
 start /b redis-server.exe
