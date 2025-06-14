@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createUseStyles } from 'react-jss';
+import { getBaseUrl } from '../lib/request';
 
 const useStyles = createUseStyles({
   root: {
@@ -28,9 +29,9 @@ const BuildersClub = () => {
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    
-    const url = new URL('https:/bb.zawg.ca/UnsecuredContent/404.html');
-    setIframeSrc(url.href);
+
+    const iframe = `${getBaseUrl()}/UnsecuredContent/404.html`;
+    setIframeSrc(iframe);
 
     return () => {
       document.body.style.overflow = '';
