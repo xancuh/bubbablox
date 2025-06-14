@@ -405,6 +405,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
         <div class="form-group">
             <input type="submit" id="LoginButton" class="form-control" value="Log In" rbx-form-interaction name="submitLogin" />
         </div>
+		<a id="HeaderForgotPassword" class="navbar-link" href="/forgotpasswordOrUsername">Forgot Username/Password?</a>
 <div id="msgcont">
     <div id="login-error-message" class="text-danger" style="
         display: none;
@@ -560,7 +561,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
 				
 	<div class="discordversection">
 		<div id="discordbtncontainer">
-			<a href="https://discord.com/api/oauth2/authorize?client_id=1372374011945947226&redirect_uri=https://bb.zawg.ca/discordcb&response_type=code&scope=identify" 
+			<a href="/discordverify" 
 			   class="btn-discord-verify" id="discord-verify-button">
 				<img src="https://zawg.ca/assets/discord.png" 
 					 alt="Discord" class="discord-logo">

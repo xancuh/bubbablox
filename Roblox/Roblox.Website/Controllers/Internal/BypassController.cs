@@ -786,6 +786,165 @@ namespace Roblox.Website.Controllers
 		public string avatar { get; set; }
 	}
 	
+	[HttpGetBypass("forgot-password")]
+	public async Task<MVC.IActionResult> FrorgotPassword()
+	{
+		var clientId = Roblox.Configuration.DiscordClientID;
+		var redirecturl = Uri.EscapeDataString(Roblox.Configuration.DiscordForgotPasswordRedirect);
+		var scope = Uri.EscapeDataString("identify");
+		
+		return new MVC.RedirectResult(
+			$"https://discord.com/api/oauth2/authorize?client_id={clientId}&redirect_uri={redirecturl}&response_type=code&scope={scope}"
+		);
+	}
+
+	[HttpGetBypass("forgotcb")]
+	public async Task<MVC.IActionResult> ForgotPasswordCallback([MVC.FromQuery] string code)
+	{
+		try
+		{
+			var httpClient = new HttpClient();
+			var parameters = new Dictionary<string, string>
+			{
+				{"client_id", Roblox.Configuration.DiscordClientID},
+				{"client_secret", Roblox.Configuration.DiscordClientSecret},
+				{"grant_type", "authorization_code"},
+				{"code", code},
+				{"redirect_uri", Roblox.Configuration.DiscordForgotPasswordRedirect}
+			};
+
+			var response = await httpClient.PostAsync("https://discord.com/api/oauth2/token", 
+				new FormUrlEncodedContent(parameters));
+			
+			if (!response.IsSuccessStatusCode)
+			{
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Discord verification failed. Please try again.");
+			}
+
+			var tokenResponse = await response.Content.ReadFromJsonAsync<TokenRes>();
+			
+			httpClient.DefaultRequestHeaders.Authorization = 
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResponse.access_token);
+			
+			var userRes = await httpClient.GetAsync("https://discord.com/api/users/@me");
+			var userInfo = await userRes.Content.ReadFromJsonAsync<DiscordUser>();
+
+			var userId = await services.users.GetUserIdFromDiscordId(userInfo.id);
+			if (userId == 0)
+			{
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=No account is linked to this Discord.");
+			}
+
+			var resetToken = Guid.NewGuid().ToString();
+			var expiry = DateTime.UtcNow.AddHours(1);
+			
+			await services.users.CreatePasswordResetToken(userId, resetToken, expiry);
+
+			var encryptedToken = EncryptWithKey($"{userId}|{resetToken}|{expiry:o}", Configuration.DiscordKey);
+			
+			Response.Cookies.Append("resetpasstoken", encryptedToken, new CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = SameSiteMode.Lax,
+				Expires = expiry
+			});
+			
+			Response.Cookies.Append("resetpasswordverified", "true", new CookieOptions
+			{
+				HttpOnly = false,
+				Secure = true,
+				SameSite = SameSiteMode.Lax,
+				Expires = DateTimeOffset.Now.AddMinutes(10)
+			});
+
+			return Redirect("/forgotpasswordOrUsername");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"password reset error: {ex}");
+			return Redirect("/forgotpasswordOrUsername?forgotmsg=Password reset failed. Please try again.");
+		}
+	}
+
+	[HttpPostBypass("reset-password")]
+	public async Task<MVC.IActionResult> ResetPassword([MVC.FromForm] string newPassword)
+	{
+		try
+		{
+			var cookie = Request.Cookies["resetpasstoken"];
+			
+			if (string.IsNullOrEmpty(cookie))
+			{
+				Response.Cookies.Delete("resetpasstoken");
+				Response.Cookies.Delete("resetpasswordverified");
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Invalid/expired token! Please try again.");
+			}
+
+			var decrypted = DecryptWithKey(cookie, Configuration.DiscordKey);
+			var parts = decrypted.Split('|');
+			if (parts.Length != 3 || !long.TryParse(parts[0], out var userId) || 
+				!DateTime.TryParse(parts[2], out var expiry))
+			{
+				Response.Cookies.Delete("resetpasstoken");
+				Response.Cookies.Delete("resetpasswordverified");
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Invalid token, please try again!");
+			}
+
+			// Convert expiry to UTC if it's not already
+			if (expiry.Kind != DateTimeKind.Utc)
+			{
+				expiry = expiry.ToUniversalTime();
+			}
+
+			if (expiry < DateTime.UtcNow)
+			{
+				Response.Cookies.Delete("resetpasstoken");
+				Response.Cookies.Delete("resetpasswordverified");
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Token has expired, please try again!");
+			}
+
+			var resetToken = parts[1];
+			var isValid = await services.users.ValidatePasswordResetToken(userId, resetToken);
+			if (!isValid)
+			{
+				Response.Cookies.Delete("resetpasstoken");
+				Response.Cookies.Delete("resetpasswordverified");
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Invalid token, please try again!");
+			}
+			
+			if (string.IsNullOrEmpty(newPassword) || !services.users.IsPasswordValid(newPassword))
+			{
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=Invalid password.");
+			}
+
+			await services.users.ChangePassword(userId, newPassword);
+
+			await services.users.DeleteResetPassword(userId, resetToken);
+			Response.Cookies.Delete("resetpasstoken");
+			Response.Cookies.Delete("resetpasswordverified");
+
+			return Redirect("/forgotpasswordOrUsername?redirect=true");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"password reset error: {ex}");
+			return Redirect("/forgotpasswordOrUsername?forgotmsg=Password reset failed. Please try again.");
+		}
+	}
+		
+	[HttpGetBypass("discordverify")]
+	public async Task<MVC.IActionResult> DiscordURL()
+	{
+		var clientId = Roblox.Configuration.DiscordClientID;
+		var redirecturl = Uri.EscapeDataString(Roblox.Configuration.DiscordRedirect);
+		var scope = Uri.EscapeDataString("identify");
+		
+		return new MVC.RedirectResult(
+			$"https://discord.com/api/oauth2/authorize?client_id={clientId}&redirect_uri={redirecturl}&response_type=code&scope={scope}"
+		);
+	}
+		
 	[HttpGetBypass("discordcb")]
 	public async Task<MVC.IActionResult> DiscordVerify([MVC.FromQuery] string code)
 	{

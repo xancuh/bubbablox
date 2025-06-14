@@ -387,6 +387,105 @@ public class UsersService : ServiceBase, IService
             });
 
     }
+		
+	public async Task CreatePasswordResetToken(long userId, string token, DateTime expiry)
+	{
+		await db.ExecuteAsync(
+			"INSERT INTO password_reset_tokens (user_id, token, expires_at) " +
+			"VALUES (@userId, @token, @expiresAt) " +
+			"ON CONFLICT (user_id, token) DO UPDATE SET expires_at = @expiresAt, used = false",
+			new { userId, token, expiresAt = expiry });
+	}
+	
+	public async Task<bool> ValidatePasswordResetToken(long userId, string token)
+	{
+		var valid = await db.ExecuteScalarAsync<bool>(
+			"SELECT EXISTS(SELECT 1 FROM password_reset_tokens " +
+			"WHERE user_id = @userId AND token = @token AND expires_at > NOW() AND used = false)",
+			new { userId, token });
+		return valid;
+	}
+
+	public async Task DeleteResetPassword(long userId, string token)
+	{
+		await db.ExecuteAsync(
+			"UPDATE password_reset_tokens SET used = true WHERE user_id = @userId AND token = @token",
+			new { userId, token });
+	}
+
+	public async Task<long> GetUserIdFromDiscordId(string discordId)
+	{
+		return await db.ExecuteScalarAsync<long>(
+			"SELECT user_id FROM user_discord_links WHERE discord_id = @discordId",
+			new { discordId });
+	}
+	
+public async Task ChangePassword(long userId, string newPassword)
+{
+    // Debugging: Log method entry with parameters (redacting password for security)
+    Debug.WriteLine($"ChangePassword called for userId: {userId}, newPassword: [REDACTED]");
+    
+    if (!IsPasswordValid(newPassword))
+    {
+        Debug.WriteLine("Password validation failed");
+        throw new ArgumentException("Password invalid");
+    }
+    
+    Debug.WriteLine("Password validation succeeded");
+
+    var hasher = new PasswordHasher();
+    var newpw = hasher.Hash(newPassword);
+    Debug.WriteLine("Password hashed successfully");
+
+    try
+    {
+        Debug.WriteLine("Attempting database update...");
+        int affectedRows = await db.ExecuteAsync(
+            "UPDATE \"user\" SET password = :newPassword WHERE id = :userId",
+            new 
+            {
+                userId,
+                newPassword = newpw
+            });
+            
+        Debug.Assert(affectedRows == 1, $"Expected to update 1 row, but updated {affectedRows} rows");
+        Debug.WriteLine("Database update successful");
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"Database update failed: {ex.Message}");
+        throw; // Re-throw to maintain original behavior
+    }
+
+    try
+    {
+        Debug.WriteLine("Attempting to expire all sessions...");
+        await ExpireAllSessions(userId);
+        Debug.WriteLine("Session expiration successful");
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"Session expiration failed: {ex.Message}");
+        throw;
+    }
+
+    try
+    {
+        Debug.WriteLine("Attempting to clear user cache...");
+        using (var userCache = ServiceProvider.GetOrCreate<GetUserByIdCache>())
+        {
+            userCache.Remove(userId);
+        }
+        Debug.WriteLine("User cache cleared successfully");
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"Cache clearance failed: {ex.Message}");
+        throw;
+    }
+
+    Debug.WriteLine("ChangePassword completed successfully");
+}
 
     /// <summary>
     /// Charge the user username price, and change the user's username

@@ -96,7 +96,7 @@ const LoginModal = props => {
       <div className='row mt-2'>
         <div className='col-12'>
           <p>
-            <a className={s.forgotPass} href='/forgot-password'>Forgot Password?</a>
+            <a className={s.forgotPass} href='/forgotpasswordOrUsername'>Forgot Password?</a>
           </p>
         </div>
       </div>
