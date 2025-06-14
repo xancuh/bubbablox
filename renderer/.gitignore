@@ -1,6 +1,7 @@
 config.json
 cookies.txt
 rcc-docker
+/node_modules
 *.tar
 # added either manually or by github actions/jenkins/etc
 gs-config.json
