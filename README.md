@@ -102,6 +102,10 @@ Sign up your account with the name ROBLOX (or whatever name), then go to https:/
 
 Then, go back to Create Player and set the ID to 12, and the name as BadDecisions. Make sure it's a hard password.
 
+Now sign up with your account normally.
+
+congrats, site made
+
 -- Webserver --
 
 You should change the Directory root in ```webserver\apache\conf\extra\httpd-vhosts.conf``` to your actual webserver root location.
@@ -112,11 +116,7 @@ Then go into ```webserver/root/game``` then go into join.ashx and change the bs.
 
 Do the same for PlaceLauncher.ashx.
 
-Then you should be able to start the webserver at ```webserver\apache\bin\httpd.exe```, and connect using the client.
-
-Now sign up normally.
-
-congrats site made
+Then you should be able to start the webserver, and connect using the client.
 
 -- Client instructions --
 
