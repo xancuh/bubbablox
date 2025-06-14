@@ -1,0 +1,631 @@
+<script lang="ts">
+    import { onMount } from "svelte";
+    import Main from "../components/templates/Main.svelte";
+    import request from "../lib/request";
+    import * as rank from "../stores/rank";
+
+    let code: string = "";
+    let assetId: string = "";
+    let robuxAmount: string = "";
+    let expiresinval: string = "";
+    let expiresin: 'seconds' | 'minutes' | 'hours' | 'days' = 'hours';
+    let expiresNever: boolean = true;
+    let maxUses: string = "1";
+    let isActive: boolean = true;
+
+    let promocodes: PCEntry[] = [];
+    let selectedpc: PCEntry | null = null;
+    let redemptions: PCREntry[] = [];
+	let hidemaxed: boolean = true;
+    let limit: string = "1000000";
+    let offset: string = "0";
+
+    let disabled = false;
+    let loading = false;
+    let islistloading = false;
+    let redemptionLoading = false;
+    let errormsg: string | undefined;
+    let successmsg: string | undefined;
+    let activeTab: 'create' | 'list' = 'create';
+
+    interface PCEntry {
+        id: number;
+        code: string;
+        asset_id: number | null;
+        robux_amount: number | null;
+        created_at: string;
+        expires_at: string | null;
+        max_uses: number;
+        use_count: number;
+        is_active: boolean;
+    }
+    
+    interface PCREntry {
+        id: number;
+        promocode_id: number;
+        user_id: number;
+        redeemed_at: string;
+        asset_id: number | null;
+        robux_amount: number | null;
+        username: string;
+    }
+    
+    rank.promise.then(() => {
+        if (!rank.hasPermission("GiveUserItem")) {
+            errormsg = "You don't have permission to manage promocodes";
+            disabled = true;
+        }
+    });
+    
+    async function loadpromocodes() {
+        try {
+            islistloading = true;
+            errormsg = undefined;
+            const response = await request.get(`/promocodes/list?limit=${limit}&offset=${offset}`);
+
+            promocodes = Array.isArray(response) ? response : response.data;
+            
+            if (!Array.isArray(promocodes)) {
+                throw new Error("Invalid response format from server");
+            }
+        } catch (error) {
+            console.error("Failed to load promocodes:", error);
+            errormsg = error.message || "Failed to load promocodes";
+            promocodes = [];
+        } finally {
+            islistloading = false;
+        }
+    }
+	
+	async function deletePromoCode(promoCodeId: number) {
+        if (!confirm('Are you sure you want to delete this promocode?')) {
+            return;
+        }
+
+        try {
+            loading = true;
+            errormsg = undefined;
+            await request.delete(`/promocodes/delete`, {
+                data: { promoCodeId }
+            });
+            successmsg = `Promocode deleted successfully`;
+            await loadpromocodes();
+            selectedpc = null;
+            redemptions = [];
+        } catch (error) {
+            console.error("Failed to delete Promocode:", error);
+            errormsg = error.message || "Failed to delete Promocode";
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function loadRedemptions(promoCodeId: number) {
+        try {
+            redemptionLoading = true;
+            errormsg = undefined;
+            const response = await request.get(`/promocodes/redemptions?promoCodeId=${promoCodeId}&limit=${limit}&offset=${offset}`);
+
+            redemptions = Array.isArray(response) ? response : response.data;
+            
+            if (!Array.isArray(redemptions)) {
+                throw new Error("Invalid response format from server");
+            }
+            
+            selectedpc = promocodes.find(pc => pc.id === promoCodeId) || null;
+        } catch (error) {
+            console.error("Failed to load redemptions:", error);
+            errormsg = error.message || "Failed to load redemptions";
+            redemptions = [];
+        } finally {
+            redemptionLoading = false;
+        }
+    }
+    
+    async function toggleActive(promoCodeId: number, currentStatus: boolean) {
+        try {
+            loading = true;
+            errormsg = undefined;
+            await request.post(`/promocodes/toggle-active`, {
+                promoCodeId,
+                isActive: !currentStatus
+            });
+            successmsg = `Promocode ${currentStatus ? 'deactivated' : 'activated'} successfully`;
+            await loadpromocodes();
+        } catch (error) {
+            console.error("Failed to toggle Promocode status:", error);
+            errormsg = error.message || "Failed to toggle Promocode status";
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function createPromoCode() {
+        errormsg = undefined;
+        successmsg = undefined;
+        loading = true;
+        
+        try {
+            const requestData: any = {
+                Code: code.toUpperCase(),
+                AssetId: assetId ? parseInt(assetId) : null,
+                RobuxAmount: robuxAmount ? parseInt(robuxAmount) : null,
+                MaxUses: parseInt(maxUses),
+                IsActive: isActive
+            };
+
+            if (!expiresNever && expiresinval) {
+                const value = parseInt(expiresinval);
+                if (isNaN(value) || value <= 0) {
+                    throw new Error("Expiration value must be a positive number");
+                }
+
+                switch (expiresin) {
+                    case 'seconds':
+                        requestData.ExpiresInSeconds = value;
+                        break;
+                    case 'minutes':
+                        requestData.ExpiresInMinutes = value;
+                        break;
+                    case 'hours':
+                        requestData.ExpiresInHours = value;
+                        break;
+                    case 'days':
+                        requestData.ExpiresInDays = value;
+                        break;
+                }
+            }
+
+            const response = await request.post(`/promocodes/create`, requestData);
+            
+            successmsg = `Promocode created successfully! You can view it in the View Promocodes section.`;
+            code = "";
+            assetId = "";
+            robuxAmount = "";
+            expiresinval = "";
+            expiresin = 'hours';
+            expiresNever = true;
+            maxUses = "1";
+            isActive = true;
+            
+            await loadpromocodes();
+        } catch (error) {
+            console.error("Failed to create promocode:", error);
+            errormsg = error.message || "Failed to create promocode, Please try again";
+        } finally {
+            loading = false;
+        }
+    }
+	
+    function formatTimeRemaining(expiresAt: string | null): string {
+        if (!expiresAt) return "Never";
+        
+        const now = new Date();
+        const expiryDate = new Date(expiresAt);
+        
+        const nowUtc = Date.UTC(
+            now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+            now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()
+        );
+        
+        const expiryUtc = expiryDate.getTime();
+        const diffMs = expiryUtc - nowUtc;
+        
+        if (diffMs <= 0) return "Expired";
+        
+        const diffSec = Math.round(diffMs / 1000);
+        const diffMin = Math.round(diffMs / (1000 * 60));
+        const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffSec < 60) return `Expires in ${diffSec} second${diffSec !== 1 ? 's' : ''}`;
+        if (diffMin < 60) return `Expires in ${diffMin} minute${diffMin !== 1 ? 's' : ''}`;
+        if (diffHours < 24) return `Expires in ${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+        return `Expires in ${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    }
+
+    onMount(() => {
+        loadpromocodes();
+    });
+</script>
+
+<svelte:head>
+    <title>Promocodes</title>
+</svelte:head>
+
+<Main>
+    <div class="row">
+        <div class="col-12">
+            <h1>Promocodes</h1>
+            
+            {#if errormsg}
+                <div class="alert alert-danger">{errormsg}</div>
+            {/if}
+            
+            {#if successmsg}
+                <div class="alert alert-success">{successmsg}</div>
+            {/if}
+            
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <button 
+                        class="nav-link {activeTab === 'create' ? 'active' : ''}" 
+                        on:click={() => activeTab = 'create'}
+                    >
+                        Create a Promocode
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button 
+                        class="nav-link {activeTab === 'list' ? 'active' : ''}" 
+                        on:click={() => {
+                            activeTab = 'list';
+                            loadpromocodes();
+                        }}
+                    >
+                        View Promocodes
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        {#if activeTab === 'create'}
+            <div class="col-12 mt-3">
+                <form on:submit|preventDefault={createPromoCode}>
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Promocode *</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="code" 
+                            bind:value={code}
+                            placeholder="Code"
+                            required
+                            minlength="4"
+                            maxlength="50"
+                            disabled={disabled || loading}
+                        />
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="asset-id" class="form-label">Asset ID</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="asset-id" 
+                                bind:value={assetId}
+                                disabled={disabled || loading || !!robuxAmount}
+                            />
+							<div class="form-text">You must have at least Robux or an Asset ID</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="robux-amount" class="form-label">Robux</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="robux-amount" 
+                                bind:value={robuxAmount}
+                                min="0"
+                                max="1000000"
+                                disabled={disabled || loading || !!assetId}
+                            />
+                        </div>
+                    </div>
+                    
+					<div class="row">
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Expiration</label>
+							<div class="input-group">
+								<div class="form-check">
+									<input 
+										type="checkbox" 
+										class="form-check-input" 
+										id="expires-never" 
+										bind:checked={expiresNever}
+										disabled={disabled || loading}
+									/>
+									<label class="form-check-label" for="expires-never">Never</label>
+								</div>
+							</div>
+							{#if !expiresNever}
+								<div class="input-group mt-2">
+									<input 
+										type="number" 
+										class="form-control" 
+										bind:value={expiresinval}
+										placeholder="Enter value"
+										min="1"
+										disabled={disabled || loading}
+									/>
+									<select 
+										class="form-select" 
+										bind:value={expiresin}
+										disabled={disabled || loading}
+									>
+										<option value="seconds">Seconds from now</option>
+										<option value="minutes">Minutes from now</option>
+										<option value="hours" selected>Hours from now</option>
+										<option value="days">Days from now</option>
+									</select>
+								</div>
+							{/if}
+						</div>               
+    
+						<div class="col-md-6 mb-3">
+							<label for="max-uses" class="form-label">Max Uses *</label>
+							<input 
+								type="number" 
+								class="form-control" 
+								id="max-uses" 
+								bind:value={maxUses}
+								required
+								min="1"
+								max="1000000"
+								disabled={disabled || loading}
+							/>
+							<div class="form-text">Between 1 - 1 million</div>
+						</div>
+					</div>
+
+                    <div class="mb-3 form-check">
+                        <input 
+                            type="checkbox" 
+                            class="form-check-input" 
+                            id="is-active" 
+                            bind:checked={isActive}
+                            disabled={disabled || loading}
+                        />
+                        <label class="form-check-label" for="is-active">Active</label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button 
+                            type="submit" 
+                            class="btn btn-success"
+                            disabled={disabled || loading || !code || !maxUses || (!assetId && !robuxAmount)}
+                        >
+                            {#if loading}
+                                Creating...
+                            {:else}
+                                Create
+                            {/if}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {:else}
+			<div class="col-12 mt-3">
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<div class="d-flex align-items-center gap-2">
+							<div class="form-check">
+								<input 
+									class="form-check-input" 
+									type="checkbox" 
+									id="hidemaxedtog"
+									bind:checked={hidemaxed}
+								>
+								<label class="form-check-label fw-semibold" for="hidemaxedtog">
+									Hide maxed codes
+								</label>
+							</div>
+						</div>
+						<button class="btn btn-primary btn-sm" on:click={loadpromocodes} disabled={islistloading}>
+							{#if islistloading}
+								Refreshing...
+							{:else}
+								Refresh
+							{/if}
+						</button>
+					</div>
+					<div class="card-body">
+						{#if islistloading}
+							<div class="text-center py-4">
+								<div class="spinner-border text-primary" role="status">
+									<span class="visually-hidden">Loading...</span>
+								</div>
+								<p class="mt-2">Loading promocodes...</p>
+							</div>
+						{:else if promocodes.filter(pc => !hidemaxed || pc.use_count < pc.max_uses).length === 0}
+							<div class="alert alert-info">No promocodes found</div>
+						{:else}
+							<div class="table-responsive">
+								<table class="table table-striped table-hover">
+									<thead>
+										<tr>
+											<th>ID</th>
+											<th>Code</th>
+											<th>Reward</th>
+											<th>Uses</th>
+											<th>Status</th>
+											<th>Created</th>
+											<th>Expires</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each promocodes.filter(pc => !hidemaxed || pc.use_count < pc.max_uses) as promoCode}
+                                            <tr class={selectedpc?.id === promoCode.id ? 'table-primary' : ''}>
+                                                <td>{promoCode.id}</td>
+                                                <td>
+                                                    <code>{promoCode.code}</code>
+                                                    {#if promoCode.use_count >= promoCode.max_uses}
+                                                        <span class="badge bg-danger ms-2">MAX</span>
+                                                    {/if}
+                                                </td>
+                                                <td>
+                                                    {#if promoCode.asset_id}
+                                                        Asset #{promoCode.asset_id}
+                                                    {:else if promoCode.robux_amount}
+                                                        {promoCode.robux_amount} Robux
+                                                    {/if}
+                                                </td>
+                                                <td>{promoCode.use_count}/{promoCode.max_uses}</td>
+                                                <td>
+                                                    {#if promoCode.is_active}
+                                                        <span class="badge bg-success">Active</span>
+                                                    {:else}
+                                                        <span class="badge bg-secondary">Inactive</span>
+                                                    {/if}
+                                                </td>
+                                                <td>{new Date(promoCode.created_at).toLocaleString()}</td>
+												<td>
+													{#if promoCode.expires_at}
+														{formatTimeRemaining(promoCode.expires_at)}
+													{:else}
+														Never
+													{/if}
+												</td>
+												<td>
+													<div class="btn-group btn-group-sm">
+														<button 
+															class="btn btn-primary"
+															on:click={() => loadRedemptions(promoCode.id)}
+															disabled={redemptionLoading}
+															title="View redemptions"
+														>
+															View
+														</button>
+														<button 
+															class="btn {promoCode.is_active ? 'btn-warning' : 'btn-success'}"
+															on:click={() => toggleActive(promoCode.id, promoCode.is_active)}
+															disabled={loading}
+															title={promoCode.is_active ? 'Deactivate' : 'Activate'}
+														>
+															{promoCode.is_active ? 'Deactivate' : 'Activate'}
+														</button>
+														<button 
+															class="btn btn-danger"
+															on:click={() => deletePromoCode(promoCode.id)}
+															disabled={loading}
+															title="Delete"
+														>
+															Delete
+														</button>
+													</div>
+												</td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+                
+                {#if selectedpc}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Redemptions for <code>{selectedpc.code}</code></h5>
+                        </div>
+                        <div class="card-body">
+                            {#if redemptionLoading}
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading...</p>
+                                </div>
+                            {:else if redemptions.length === 0}
+                                <div class="alert alert-info">No redemptions found for this code</div>
+                            {:else}
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Reward</th>
+                                                <th>Redeemed At</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {#each redemptions as redemption}
+                                                <tr>
+                                                    <td>
+                                                        {#if redemption.username}
+                                                            {redemption.username} (ID: {redemption.user_id})
+                                                        {:else}
+                                                            User ID: {redemption.user_id}
+                                                        {/if}
+                                                    </td>
+                                                    <td>
+                                                        {#if redemption.asset_id}
+                                                            Asset #{redemption.asset_id}
+                                                        {:else if redemption.robux_amount}
+                                                            {redemption.robux_amount} Robux
+                                                        {/if}
+                                                    </td>
+                                                    <td>{new Date(redemption.redeemed_at).toLocaleString()}</td>
+                                                </tr>
+                                            {/each}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
+                {/if}
+            </div>
+        {/if}
+    </div>
+</Main>
+
+<style>
+    .alert {
+        margin-bottom: 1rem;
+    }
+    .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .nav-tabs {
+        margin-bottom: 1rem;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+    .text-center {
+        text-align: center;
+    }
+    .py-4 {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .mt-2 {
+        margin-top: 0.5rem;
+    }
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+	.btn i {
+        margin-right: 0.3rem;
+    }
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    .btn-group-sm .btn {
+        font-size: 0.875rem;
+    }
+	.btn-icon-only {
+        width: 2rem;
+        padding: 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

@@ -1,0 +1,11 @@
+{
+    "rcc": "C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\RCCService",
+	"rccexe": "RCCService.exe",
+    "authorization": "",
+    "baseUrl": "https://bb.zawg.ca",
+    "rccPort": 64989,
+    "port": 3040,
+    "websiteBotAuth": "",
+    "thumbnailWebsocketPort": 3189,
+	"webhook": "https://zawg.ca/assets/ecsr/webhooknew.php"
+}
