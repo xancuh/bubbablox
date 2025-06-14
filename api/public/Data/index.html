@@ -185,7 +185,7 @@ Roblox.Endpoints.Urls = Roblox.Endpoints.Urls || {};
 	<script>
     (function() {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://bb.zawg.ca/apisite/users/v1/users/authenticated', true);
+        xhr.open('GET', '/apisite/users/v1/users/authenticated', true);
         xhr.withCredentials = true;
         xhr.onload = function() {
             if (xhr.status === 200) {
@@ -268,7 +268,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
         width: calc(33.333333% - 10px);
     }
 	
-	.discord-verification-section {
+	.discordversection {
 		background: rgba(0,0,0,0.1);
 		padding: 15px;
 		border-radius: 5px;
@@ -395,7 +395,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
 </script>
 
 <div class="collapse navbar-collapse col-sm-6" id="LandingNavbar" ng-modules="roblox.formEvents" >
-    <form name="loginForm" action="https://bb.zawg.ca/login" id="LogInForm" class="navbar-form form-inline navbar-right" method="post" role="form" rbx-form-context context="RollerCoaster" novalidate>
+    <form name="loginForm" action="/login" id="LogInForm" class="navbar-form form-inline navbar-right" method="post" role="form" rbx-form-context context="RollerCoaster" novalidate>
         <div class="form-group" id="LoginUsernameParent">
             <input id="LoginUsername" type="text" placeholder="Username" class="form-control" name="username" rbx-form-interaction autofocus="autofocus" />
         </div>
@@ -558,7 +558,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
                     Log in and start having fun!
                 </h3>
 				
-	<div class="discord-verification-section">
+	<div class="discordversection">
 		<div id="discordbtncontainer">
 			<a href="https://discord.com/api/oauth2/authorize?client_id=1372374011945947226&redirect_uri=https://bb.zawg.ca/discordcb&response_type=code&scope=identify" 
 			   class="btn-discord-verify" id="discord-verify-button">
@@ -992,7 +992,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
 					class="btn-primary-md signup-submit-button" 
 					rbx-form-interaction name="signupSubmit" 
 					ng-disabled="isSubmitting" 
-					data-signup-api-url="https://bb.zawg.ca/login/signup" 
+					data-signup-api-url="/login/signup" 
 					ng-click="submitSignup($event)" 
 					ng-keypress="submitSignup($event)" 
 					disabled
@@ -1129,32 +1129,32 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
     <div class="footer">
         <ul class="row footer-links">
                 <li class="col-4 col-xs-2 footer-link">
-                    <a href="https://bb.zawg.ca/about" class="text-footer-nav roblox-interstitial" target="_blank">
+                    <a href="/about" class="text-footer-nav roblox-interstitial" target="_blank">
                         About Us
                     </a>
                 </li>
                 <li class="col-4 col-xs-2 footer-link">
-                    <a href="https://discord.gg/pMyyd5FXWU" class="text-footer-nav roblox-interstitial" target="_blank">
+                    <a href="https://discord.gg/bubba" class="text-footer-nav roblox-interstitial" target="_blank">
                         Discord
                     </a>
                 </li>
             <li class="col-4 col-xs-2 footer-link">
-                <a href="https://bb.zawg.ca/blog" class="text-footer-nav" target="_blank">
+                <a href="/blog" class="text-footer-nav" target="_blank">
                     Blog
                 </a>
             </li>
             <li class="col-4 col-xs-2 footer-link">
-                <a href="https://bb.zawg.ca/privacy" class="text-footer-nav" target="_blank">
+                <a href="/privacy" class="text-footer-nav" target="_blank">
                     Privacy
                 </a>
             </li>
             <li class="col-4 col-xs-2 footer-link">
-                <a href="https://bb.zawg.ca/parents" class="text-footer-nav roblox-interstitial" target="_blank">
+                <a href="/parents" class="text-footer-nav roblox-interstitial" target="_blank">
                     Parents
                 </a>
             </li>
             <li class="col-4 col-xs-2 footer-link">
-                <a href="https://discord.gg/pMyyd5FXWU" class="text-footer-nav roblox-interstitial" target="_blank">
+                <a href="https://discord.gg/bubba" class="text-footer-nav roblox-interstitial" target="_blank">
                     Help
                 </a>
             </li>
@@ -1162,7 +1162,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
         <p class="text-footer footer-note">
             BubbaBlox, "Online Building Toy", characters, logos, names, and all related indicia are trademarks of BUBBABLOX Corporation</a>, ©2016.
             Patents pending. BubbaBlox is not sponsored, authorized or endorsed by any producer of plastic building bricks, including The LEGO Group, MEGA Brands, and K'Nex, and no resemblance to the products of these companies is intended.
-            Use of this site signifies your acceptance of the <a href="https://bb.zawg.ca/tos" target="_blank" class="text-link">Terms and Conditions</a>.
+            Use of this site signifies your acceptance of the <a href="/tos" target="_blank" class="text-link">Terms and Conditions</a>.
         </p>
     </div>
 </footer>
