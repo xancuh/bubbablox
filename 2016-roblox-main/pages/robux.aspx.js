@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createUseStyles } from 'react-jss';
+import { getBaseUrl } from '../lib/request';
 
 const useStyles = createUseStyles({
   root: {
@@ -22,15 +23,15 @@ const useStyles = createUseStyles({
   },
 });
 
-const BuildersClub = () => {
+const ROBUX = () => {
   const classes = useStyles();
   const [iframeSrc, setIframeSrc] = useState('');
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    
-    const url = new URL('https:/bb.zawg.ca/UnsecuredContent/robux.html');
-    setIframeSrc(url.href);
+
+    const iframe = `${getBaseUrl()}/UnsecuredContent/robux.html`;
+    setIframeSrc(iframe);
 
     return () => {
       document.body.style.overflow = '';
@@ -51,4 +52,4 @@ const BuildersClub = () => {
   );
 };
 
-export default BuildersClub;
+export default ROBUX;
