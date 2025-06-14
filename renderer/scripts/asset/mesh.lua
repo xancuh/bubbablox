@@ -3,10 +3,6 @@ local jobId = "InsertJobIdHere";
 local mode = "R6";
 local baseURL = "http://bb.zawg.ca";
 local uploadURL = "UPLOAD_URL_HERE";
-local _X_RES_ = 512;
-local _Y_RES_ = 512;
-
-print("[DEBUG] Initializing services...")
 local ScriptContext = game:GetService("ScriptContext");
 local Lighting = game:GetService('Lighting');
 local RunService = game:GetService('RunService');
@@ -14,107 +10,58 @@ local ContentProvider = game:GetService('ContentProvider');
 local HttpService = game:GetService("HttpService");
 local ThumbnailGenerator = game:GetService('ThumbnailGenerator');
 local Players = game:GetService("Players");
-
-print("[DEBUG] Configuring services...")
 game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.All, false);
-print("[DEBUG] Core GUI disabled")
 game:GetService('ThumbnailGenerator').GraphicsMode = 2;
-print("[DEBUG] ThumbnailGenerator GraphicsMode set to 2")
 HttpService.HttpEnabled = true;
-print("[DEBUG] HttpEnabled set to true")
 ScriptContext.ScriptsDisabled = true
-print("[DEBUG] ScriptsDisabled set to true")
 Lighting.Outlines = false
-print("[DEBUG] Lighting outlines disabled")
-
--- URL setup
-print("[DEBUG] Setting up URLs...")
-ContentProvider:SetBaseUrl('https://bb.zawg.ca')
-print("[DEBUG] Base URL set to:", ContentProvider.BaseUrl)
-game:GetService("ContentProvider"):SetAssetUrl(baseURL .. "/asset/")
-print("[DEBUG] Asset URL set")
-game:GetService("InsertService"):SetAssetUrl(baseURL .. "/asset/?id=%d")
-print("[DEBUG] InsertService Asset URL set")
-pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(baseURL .. "/asset/") end)
-print("[DEBUG] ScriptInformationProvider attempt set")
+ContentProvider:SetBaseUrl('http://bb.zawg.ca')
+print(ContentProvider.BaseUrl)
+game:GetService("ContentProvider"):SetAssetUrl(baseURL .. "/Asset/")
+game:GetService("InsertService"):SetAssetUrl(baseURL .. "/Asset/?id=%d")
+pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
+game:GetService("ContentProvider"):SetBaseUrl(baseURL .. "/")
 Players:SetChatFilterUrl(baseURL .. "/Game/ChatFilter.ashx")
-print("[DEBUG] Chat filter URL set")
-game:GetService("InsertService"):SetAssetVersionUrl(baseURL .. "/asset/?assetversionid=%d")
-print("[DEBUG] Asset version URL set")
+local Insert = game:GetService("InsertService")
+game:GetService("InsertService"):SetAssetUrl(baseURL .. "/Asset/?id=%d")
+game:GetService("InsertService"):SetAssetVersionUrl(baseURL .. "/Asset/?assetversionid=%d")
 
+-- not having this leads to some weird issues, i don't really know why
+-- it complains about "Instance.new()" being a userdata value if you do inline concat, so a function call is required...
 local function concat(one, two, three)
-    print("[DEBUG] Concatenating strings:", one, two, three)
     return one .. two .. three
 end
 
-local function render()
-    print("[DEBUG] Render function started")
-    
-    -- Create mesh part
-    print("[DEBUG] Creating MeshPartContainer")
-    local MeshPartContainer = Instance.new("Part");
-    local currentAssetId = assetId[1];
-    print("[DEBUG] Using asset ID:", currentAssetId)
-    
-    -- Create file mesh
-    print("[DEBUG] Creating FileMesh")
-    local renderMeshExample = Instance.new("FileMesh", MeshPartContainer);
-    local meshUrl = concat(baseURL, "/asset/?id=", tostring(currentAssetId));
-    renderMeshExample.MeshId = meshUrl;
-    print("[DEBUG] Mesh ID set to:", meshUrl)
-    
-    -- Create model in workspace
-    print("[DEBUG] Creating character model in workspace")
-    local charModel = Instance.new("Model", game.Workspace);
-    MeshPartContainer.Parent = charModel;
-    print("[DEBUG] MeshPartContainer parent set to charModel")
+    local function render()
+        local MeshPartContainer = Instance.new("Part");
+        local assetId = assetId[1];
+        local renderMeshExample = Instance.new("FileMesh", MeshPartContainer);
+        renderMeshExample.MeshId = concat(baseURL, "/Asset/?id=", tostring(assetId));
 
-    print("[DEBUG] Waiting 4 seconds for asset to load...")
-    wait(4)
-    
-    -- Generate thumbnail
-    print("[DEBUG] Generating thumbnail")
-    local encoded, errorMessage = pcall(function()
-        return ThumbnailGenerator:Click('png', _X_RES_, _Y_RES_, true, false)
-    end)
-    
-    if not encoded then
-        print("[ERROR] Thumbnail generation failed:", errorMessage)
-        return
+
+        local charModel = Instance.new("Model", game.Workspace);
+        MeshPartContainer.Parent = charModel;
+
+        print("[debug] render test asset")
+        wait(4)
+        print("load now")
+        local encoded = ThumbnailGenerator:Click('png', _X_RES_, _Y_RES_, true, false)
+        print("[debug] send post request containing test asset")
+
+        local ok, data = pcall(function()
+            return HttpService:PostAsync(uploadURL, HttpService:JSONEncode({
+                ['type'] = 'Asset',
+                ['assetId'] = assetId,
+                ['thumbnail'] = encoded,
+                ['accessKey'] = "AccessKey",
+                ['jobId'] = jobId,
+            }), Enum.HttpContentType.TextPlain)
+        end)
+        print("[debug] post over",ok,data)
     end
-    
-    print("[DEBUG] Thumbnail generated successfully")
-    print("[DEBUG] Sending POST request with thumbnail data")
 
-    -- Send HTTP request
     local ok, data = pcall(function()
-        local postData = {
-            ['type'] = 'Asset',
-            ['assetId'] = currentAssetId,
-            ['thumbnail'] = encoded,
-            ['accessKey'] = "AccessKey",
-            ['jobId'] = jobId,
-        }
-        print("[DEBUG] POST data prepared:", HttpService:JSONEncode(postData))
-        return HttpService:PostAsync(uploadURL, HttpService:JSONEncode(postData), Enum.HttpContentType.TextPlain)
+        render()
     end)
-    
-    print("[DEBUG] POST request completed - Success:", ok)
-    if not ok then
-        print("[ERROR] POST request failed:", data)
-    else
-        print("[DEBUG] POST response:", data)
-    end
-end
-
--- Main execution
-print("[DEBUG] Starting render process")
-local ok, err = pcall(render)
-if not ok then
-    print("[ERROR] Render process failed:", err)
-    print(debug.traceback())
-else
-    print("[DEBUG] Render process completed successfully")
-end
-
-print("[DEBUG] Script execution complete")
+    print(ok, data);
+    print("[debug] exit game");
