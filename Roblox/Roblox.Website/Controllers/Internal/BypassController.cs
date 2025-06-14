@@ -201,7 +201,7 @@ namespace Roblox.Website.Controllers
 					}
 					catch (RecordNotFoundException)
 					{		
-						var pxyurl = $"https://bt.zawg.ca/asset/roblox/?id={assetId}";
+						var pxyurl = $"{Roblox.Configuration.GSUrl}/asset/roblox/?id={assetId}";
 
 						using var httpClient = new HttpClient();
 						httpClient.Timeout = TimeSpan.FromSeconds(10);
