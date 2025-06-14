@@ -110,6 +110,6 @@ public class CreatePlace : RobloxPageModel
         // create universe too
         await services.games.CreateUniverse(asset.placeId);
         // give url
-		successUrl = "http://bb.zawg.ca/places/" + asset.placeId + "/update";
+		successUrl = $"{Roblox.Configuration.BaseUrl}/places/{asset.placeId}/update";
     }
 }
