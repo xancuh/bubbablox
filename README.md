@@ -17,7 +17,7 @@ open CMD and use CD to go into the ```services/api``` folder and paste this ```n
 -- IMPORTANT --
 
 Then, open CMD and use CD to go into your PostgreSQL folder. It should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
-Then copy the schema.sql file in ``services/api/sql``` to that PostgreSQL bin folder, then run
+Then copy the schema.sql file in ```services/api/sql``` to that PostgreSQL bin folder, then run
 ```psql --username=yourusername --dbname=yourdatabase < schema.sql```
 
 Now, cd into ```services/Roblox/Roblox.Website```, rename the ```appsettings.example.json``` file to just ```appsettings.json```, then open it.
