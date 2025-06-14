@@ -23,7 +23,7 @@ const useStyles = createUseStyles({
   },
 });
 
-const BuildersClub = () => {
+const NotFound = () => {
   const classes = useStyles();
   const [iframeSrc, setIframeSrc] = useState('');
 
@@ -52,4 +52,4 @@ const BuildersClub = () => {
   );
 };
 
-export default BuildersClub;
+export default NotFound;
