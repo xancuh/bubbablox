@@ -2,11 +2,8 @@ local jobId = "InsertJobIdHere";
 local assetId = 65789275746246;
 local assetType = 358843;
 local mode = "R6";
-local baseURL = "https://bb.zawg.ca";
-local goToAsset = "/asset/?id="
-local uploadURL = "http://localhost:3040/api/upload-thumbnail-v1"; -- Changed to your endpoint
-local TIMEOUT = 15
-
+local baseURL = "http://bb.zawg.ca";
+local uploadURL = "UPLOAD_URL_HERE";
 local ScriptContext = game:GetService("ScriptContext");
 local Lighting = game:GetService('Lighting');
 local RunService = game:GetService('RunService');
@@ -14,105 +11,60 @@ local ContentProvider = game:GetService('ContentProvider');
 local HttpService = game:GetService("HttpService");
 local ThumbnailGenerator = game:GetService('ThumbnailGenerator');
 local Players = game:GetService("Players");
-local Insert = game:GetService("InsertService");
-
 game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.All, false);
-ThumbnailGenerator.GraphicsMode = 2;
+game:GetService('ThumbnailGenerator').GraphicsMode = 2;
 HttpService.HttpEnabled = true;
-ScriptContext.ScriptsDisabled = true;
-Lighting.Outlines = false;
+ScriptContext.ScriptsDisabled = true
+Lighting.Outlines = false
+ContentProvider:SetBaseUrl('http://bb.zawg.ca')
+print(ContentProvider.BaseUrl)
+game:GetService("ContentProvider"):SetAssetUrl(baseURL .. "/Asset/")
+game:GetService("InsertService"):SetAssetUrl(baseURL .. "/Asset/?id=%d")
+pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
+game:GetService("ContentProvider"):SetBaseUrl(baseURL .. "/")
+Players:SetChatFilterUrl(baseURL .. "/Game/ChatFilter.ashx")
+local Insert = game:GetService("InsertService")
+game:GetService("InsertService"):SetAssetUrl(baseURL .. "/Asset/?id=%d")
+game:GetService("InsertService"):SetAssetVersionUrl(baseURL .. "/Asset/?assetversionid=%d")
 
-ContentProvider:SetBaseUrl(baseURL);
-ContentProvider:SetAssetUrl(baseURL);
-Insert:SetAssetUrl(baseURL .. "/asset/?id=%d");
-Insert:SetAssetVersionUrl(baseURL .. "/Asset/?assetversionid=%d");
-Players:SetChatFilterUrl(baseURL .. "/Game/ChatFilter.ashx");
+    local function render(id)
 
-local function withTimeout(promise, timeout, taskName)
-    local start = os.time()
-    local result, err
-
-    local thread = coroutine.create(function()
-        result = {pcall(promise)}
-    end)
-    
-    coroutine.resume(thread)
-
-    while coroutine.status(thread) ~= "dead" do
-        if os.time() - start >= timeout then
-            print("[timeout] Task timed out:", taskName)
-            return false, "Timeout after "..timeout.." seconds"
-        end
-        wait(0.1)
-    end
-    
-    return unpack(result or {false, "Unknown error"})
-end
-
-local function render(id)
-    print("[debug] render function called with assetId:", assetId, "and assetType:", assetType)
-
-    local assetUrl = baseURL .. goToAsset .. assetId;
-
-    if assetType == 18 then
-        print("[debug] assetType is 18, proceeding with asset loading")
-        local ok, asset = withTimeout(function()
-            return Insert:LoadAsset(assetId)
-        end, TIMEOUT, "LoadAsset")
-        
-        if ok and asset then
-            local image = asset:GetChildren()[1]
-            
-            if image.ClassName == "Decal" then
-                assetUrl = image.Texture
-            else
-                for _, item in pairs(image:GetChildren()) do
-                    if item.ClassName == "Decal" then
-                        assetUrl = item.Texture
-                        print("[debug] found decal in child, updating to:", assetUrl)
-                        break
+        print("[debug] render image - type",assetType, "id",assetId)
+        local assetUrl = "rbxassetid://" .. assetId;
+        if assetType == 18 then
+            local ok, image = pcall(function() 
+                return Insert:LoadAsset(assetId):GetChildren()[1]
+            end)
+            print("LoadAsset() pcall over - result",ok,image)
+            if ok then
+                if image.ClassName == "Decal" then
+                    assetUrl = image.Texture
+                else
+                    for _, item in pairs(image:GetChildren()) do
+                        if item.ClassName == "Decal" then
+                            assetUrl = item.Texture
+                            break
+                        end
                     end
                 end
             end
-        else
-            print("[debug] load failed, error:", asset)
         end
-    end
-
-    local ok, avatarEncoded = withTimeout(function()
-        return ThumbnailGenerator:ClickTexture(assetUrl, 'png', 420, 420)
-    end, TIMEOUT, "ClickTexture")
-
-    if not ok then
-        print("[error] generation failed:", avatarEncoded)
-        return false
-    end
-
-    print("[debug] POST to upload URL:", uploadURL)
-    local ok, data = withTimeout(function()
-        return HttpService:PostAsync(
-            uploadURL, 
-            HttpService:JSONEncode({
+        local avatarEncoded = ThumbnailGenerator:ClickTexture(assetUrl, 'png', 420, 420)
+        print("[debug] send post request containing image")
+        local ok, data = pcall(function()
+            return HttpService:PostAsync(uploadURL, HttpService:JSONEncode({
                 ['thumbnail'] = avatarEncoded,
                 ['assetId'] = assetId,
                 ['accessKey'] = "AccessKey",
                 ['type'] = "Image",
                 ['jobId'] = jobId,
-            }), 
-            Enum.HttpContentType.TextPlain
-        )
-    end, TIMEOUT, "HTTP Post")
-
-    if ok then
-        print("[debug] POST request successful, response data:", data)
-        return true
-    else
-        print("[debug] POST request failed, error:", data)
-        return false
+            }), Enum.HttpContentType.TextPlain)
+        end)
+        print("[debug] post over",ok,data)
     end
-end
 
-local success = render(assetId)
-
-print("[debug] cleaning up...")
-game:GetService("RunService"):Stop()
+    local ok, data = pcall(function()
+        render(1)
+    end)
+    print(ok, data);
+    print("[debug] exit game");
