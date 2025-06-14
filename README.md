@@ -23,7 +23,9 @@ Then, open CMD and use CD to go into your PostgreSQL folder. It should be at
 Then copy the schema.sql file in ```services/api/sql``` to that PostgreSQL bin folder, then run
 ```psql --username=yourusername --dbname=yourdatabase < schema.sql```
 
-Now, cd into ```services/Roblox/Roblox.Website```, rename the ```appsettings.example.json``` file to just ```appsettings.json```, then open it.
+Now, cd into ```services/Roblox/Roblox.Website```, 
+rename the ```appsettings.example.json``` file to just 
+```appsettings.json```, then open it.
 
 Change the default POSTGRES line that looks like this:
  ```"Postgres": "Host=127.0.0.1; Database=bubbabloxnew; Password=test; Username=postgres; Maximum Pool Size=20",``` 
@@ -31,7 +33,9 @@ and change that to:
 
 ``` "Postgres": "Host=127.0.0.1; Database=The database you want to use, if you want to use the default one, make this 'postgres'; Password=your Postgres password you set in the setup; Username=postgres; Maximum Pool Size=20",```
 
-Now press ```ctrl + h``` and change C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\ to C:\\whereever your ECS folder is\\services\\```
+Now press ```ctrl + h``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\ 
+to 
+```C:\\whereever your ECS folder is\\services\\```
 
 -- Site is mostly set up --
 
@@ -87,7 +91,7 @@ You should also update the client ID, secret and redirect URL in ```appsettings.
 
 Now, you should download [HxD](https://mh-nexus.de/en/downloads.php?product=HxD20) and drag the RCCService.exe file into that. Make sure your domain is exactly 10 characters, or it would not work correctly.
 The reason being the way RCC was compiled it was set to use Roblox's domain which is 10 characters, so just replace it with your 10 char domain (CTRL + R, then do bb.zawg.ca then replace it with your domain. make sure your direction is all)
-Do the same for the client. I would also recommend changing your public key (in Roblox/Roblox.Website/PublicKey and your private key, everything related to it. You can easily find guides/tools for it.)
+Do the same for the client. I would also recommend changing your public key (in Roblox/Roblox.Website/PublicKey and your private key, everything related to it. You can easily find guides/tools for it. If you do, do the same for the webserver.)
 Also, change the domain in AppSettings.xml to your domain. (for client and RCC)
 
 -- IF YOU DO NOT HAVE A DOMAIN, OR A DOMAIN WITH 10 CHARACTERS --
