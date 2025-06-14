@@ -112,7 +112,7 @@ Then go into ```webserver/root/game``` then go into join.ashx and change the bs.
 
 Do the same for PlaceLauncher.ashx.
 
-Then you should be able to start the webserver, and connect using the client.
+Then you should be able to start the webserver at ```webserver\apache\bin\httpd.exe```, and connect using the client.
 
 Now sign up normally.
 
