@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createUseStyles } from 'react-jss';
+import { getBaseUrl } from '../../lib/request';
 
 const useStyles = createUseStyles({
   root: {
@@ -28,9 +29,9 @@ const BuildersClub = () => {
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    
-    const url = new URL('https:/bb.zawg.ca/UnsecuredContent/buildersclub.html');
-    setIframeSrc(url.href);
+
+    const iframe = `${getBaseUrl()}/UnsecuredContent/buildersclub.html`;
+    setIframeSrc(iframe);
 
     return () => {
       document.body.style.overflow = '';
@@ -42,7 +43,7 @@ const BuildersClub = () => {
       <iframe
         className={classes.iframe}
         src={iframeSrc}
-        title="Builders Club - BubbaBlox"
+        title="404 - BubbaBlox"
         onError={(e) => {
           console.error("iframe failed to load:", e);
         }}
