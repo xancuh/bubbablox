@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Roblox.Dto.Users;
 using Roblox.Exceptions;
 using Roblox.Models.Users;
+using Roblox.Website.Filters;
 using Roblox.Exceptions.Services.Users;
 using Roblox.Services.Exceptions;
 using Roblox.Models;
@@ -14,50 +15,28 @@ namespace Roblox.Website.Controllers;
 [Route("/apisite/users/v1")]
 public class UsersControllerV1 : ControllerBase
 {
-	// this shit SUCKED, why did i use this???
 	[HttpGet("users/authenticated")]
 	public async Task<IActionResult> GetMySession()
 	{
 		if (userSession is null) throw new UnauthorizedException();
 
-		var httpClient = new HttpClient();
-		httpClient.BaseAddress = new Uri(Configuration.BaseUrl);
-		
-		httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-		httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-		httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36");
-		
 		try
 		{
-			string staffurl = $"/Game/LuaWebService/HandleSocialRequest.ashx?method=isInGroup&playerid={userSession.userId}&groupid=1200769";
+			bool isStaff = await StaffFilter.IsStaff(userSession.userId);
 
-			var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-			var response = await httpClient.GetAsync(staffurl);
-			stopwatch.Stop();
-
-			if (response.IsSuccessStatusCode)
+			var result = new
 			{
-				var content = await response.Content.ReadAsStringAsync();
-				bool isStaff = content.Contains("<Value Type=\"boolean\">true</Value>");
+				id = userSession.userId,
+				name = userSession.username,
+				displayName = userSession.username,
+				isStaff = isStaff
+			};
 
-				var result = new
-				{
-					id = userSession.userId,
-					name = userSession.username,
-					displayName = userSession.username,
-					isStaff = isStaff
-				};
-
-				return new JsonResult(result);
-			}
-			else
-			{
-				Console.WriteLine($"[ERROR] failed to check staff status");
-			}
+			return new JsonResult(result);
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"[ERROR] error checking user authentication:");
+			Console.WriteLine($"[ERROR] error checking user auth:");
 			Console.WriteLine(ex.ToString());
 		}
 
