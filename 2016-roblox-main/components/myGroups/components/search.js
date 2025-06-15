@@ -19,10 +19,10 @@ const useStyles = createUseStyles({
 const SearchGroups = props => {
   const s = useStyles();
   return <OldCard>
-    <form method='GET' action='/Search/Groups.aspx' autoComplete='off' className='mb-1'>
+    <form method='GET' action='SearchGroups.aspx' autoComplete='off' className='mb-1'>
       <div className={s.inlineWrapper}>
         <div className={s.inline}>
-          <input className={s.searchGroupsInput} type='text' placeholder='  Search All Groups' name='query' autoComplete='off'></input>
+          <input className={s.searchGroupsInput} type='text' placeholder='  Search All Groups' name='keyword' autoComplete='off'></input>
         </div>
         <div className={s.inline + ' ms-2'}>
           <Button>Search</Button>
