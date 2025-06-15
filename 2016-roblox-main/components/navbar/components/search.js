@@ -64,7 +64,7 @@ const SearchSuggestionContainer = props => {
     <SearchSuggestionEntry mode='Catalog' url='/catalog' query={props.query}></SearchSuggestionEntry>
     <SearchSuggestionEntry mode='People' url='/search/users' query={props.query}></SearchSuggestionEntry>
     <SearchSuggestionEntry mode='Games' url='/games' query={props.query}></SearchSuggestionEntry>
-    <SearchSuggestionEntry mode='Groups' url='SearchGroups.aspx' query={props.query}></SearchSuggestionEntry>
+    <SearchSuggestionEntry mode='Groups' url='/SearchGroups.aspx' query={props.query}></SearchSuggestionEntry>
   </div>
 }
 
