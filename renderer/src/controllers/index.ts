@@ -588,13 +588,16 @@ export default class CommandHandler extends StdExceptions {
 			.replace(/_Y_RES_/g, (420 * resolutionMultiplier.mesh).toString()),
 		jobId
 		);
-
+		
+		await sendtohook(`generating mesh's (${assetId}) thumbnail`);
 		this.addToQueue(job);
 		const result = await resultPromise;
+		await sendtohook(`generated mesh's (${assetId}) thumbnail`);
 		return result.thumbnail;
 	  } catch (error) {
 		this.removeFromRunningJobs(jobId);
 		throw error;
+		await sendtohook(`failed to generate mesh thumbnail for ${assetId}: ${error.message}`);
 	  }
 	}
 
@@ -605,8 +608,10 @@ export default class CommandHandler extends StdExceptions {
                 .replace(/_X_RES_/g, (420 * resolutionMultiplier.asset).toString())
                 .replace(/_Y_RES_/g, (420 * resolutionMultiplier.asset).toString()),
             uuid.v4());
+			await sendtohook(`generating head's (${assetId}) thumbnail`);
         this.addToQueue(job);
         return (await getResult(job.jobId, resolutionMultiplier.asset)).thumbnail;
+		await sendtohook(`generated head's (${assetId}) thumbnail`);
     }
 
     public async GenerateThumbnailGame(assetId: number, x = 640, y = 360): Promise<string> {
@@ -632,9 +637,11 @@ export default class CommandHandler extends StdExceptions {
 			.replace(/AccessKey/g, conf.authorization),
 		  jobId
 		);
-
+		
+		await sendtohook(`generating faces (${assetId}) thumbnail`);
 		this.addToQueue(jobRequest);
 		const result = await resultPromise;
+		await sendtohook(`generated faces (${assetId}) thumbnail`);
 		return result.thumbnail;
 	  } catch (error) {
 		this.removeFromRunningJobs(jobId);
