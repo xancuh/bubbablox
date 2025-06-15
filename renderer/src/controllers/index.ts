@@ -1,6 +1,6 @@
 // this could still be split into separate files for better organization (but i don't care)
 // i removed all the game server stuff, and just turned it into exclusively a renderer
-// everything is fixed (i removed texture generation because it would freeze the whole ws server? it just uses the content url onsite now)
+// everything is fixed (i removed texture generation because it would freeze the whole ws server? EDIT: I JUST FIXED IT but it's too late now so i don't really care it just uses the content url onsite now)
 import StdExceptions from '../helpers/Exceptions';
 import fs = require('fs');
 import path = require('path');
@@ -93,14 +93,14 @@ import getScripts from '../scripts';
 const scripts = getScripts();
 
 import axiosStatic from 'axios';
-import { awaitResult, doesCallbackExist, getResult, resolutionMultiplier } from '../rendering';
+import { awaitResult, doesCallbackExist, getResult, resolutionMultiplier, getUploadCallbacks } from '../rendering';
 const axiosClient = axiosStatic.create({
     headers: {
         'user-agent': 'GameServer/1.0',
     }
 });
 
-const maxRendersBeforeRestart = 100;
+const maxRendersBeforeRestart = 250;
 
 interface IQueueEntry {
     request: string;
@@ -413,24 +413,38 @@ export default class CommandHandler extends StdExceptions {
         this.RunningJobIds = this.RunningJobIds.filter(v => v !== jobId);
     }
 
-    private async runJobQueueTask(rcc: IRenderEntry, job: IQueueEntry) {
-        if (!rcc || !rcc.rccReference) {
-            console.error('fatal', 'RCC reference is not available - it was probably closed', new Error().stack);
-            process.exit(1);
-        }
-        
-        const result = await axiosClient.request({
-            method: 'POST',
-            url: 'http://127.0.0.1:' + rcc.rccReference.port + '/',
-            headers: {
-                'Content-Type': 'text/xml; charset=utf-8',
-            },
-            data: job.request,
-            timeout: 2 * 60 * 1000,
-        });
-        
-        await awaitResult(job.jobId);
-    }
+	private async runJobQueueTask(rcc: IRenderEntry, job: IQueueEntry) {
+	  if (!rcc?.rccReference) {
+		throw new Error('RCC reference is not available - it was probably closed');
+	  }
+	  
+	  const multiplier = 
+		job.request.includes('imageTexture') ? resolutionMultiplier.texture :
+		job.request.includes('meshThumbnail') ? resolutionMultiplier.mesh :
+		resolutionMultiplier.asset;
+
+	  // register callback BEFORE sending to RCC
+	  const resultPromise = getResult(job.jobId, multiplier);
+
+	  try {
+		await axiosClient.request({
+		  method: 'POST',
+		  url: `http://127.0.0.1:${rcc.rccReference.port}/`,
+		  headers: { 'Content-Type': 'text/xml; charset=utf-8' },
+		  data: job.request,
+		  timeout: 2 * 60 * 1000,
+		});
+
+		return await resultPromise;
+	  } catch (error) {
+		// clean up on failure
+		const callbacks = getUploadCallbacks();
+		if (callbacks[job.jobId]) {
+		  delete callbacks[job.jobId];
+		}
+		throw error;
+	  }
+	}
     
     private async requestRccThumbnailerClose(rcc: IRenderEntry) {
         if (rcc.rccReference && !rcc.rccClosed) {
@@ -562,16 +576,27 @@ export default class CommandHandler extends StdExceptions {
         return buff.toString('base64');
     }
 
-    public async GenerateThumbnailMesh(assetId: number): Promise<string> {
-        const job = this.createSoapRequest(
-            scripts.meshThumbnail
-                .replace(/\{1234\}/g, `{${assetId}}`)
-                .replace(/_X_RES_/g, (420 * resolutionMultiplier.asset).toString())
-                .replace(/_Y_RES_/g, (420 * resolutionMultiplier.asset).toString()),
-            uuid.v4());
-        this.addToQueue(job);
-        return (await getResult(job.jobId, resolutionMultiplier.asset)).thumbnail;
-    }
+	public async GenerateThumbnailMesh(assetId: number): Promise<string> {
+	  const jobId = uuid.v4();
+	  const resultPromise = getResult(jobId, resolutionMultiplier.mesh);
+
+	  try {
+		const job = this.createSoapRequest(
+		  scripts.meshThumbnail
+			.replace(/\{1234\}/g, `{${assetId}}`)
+			.replace(/_X_RES_/g, (420 * resolutionMultiplier.mesh).toString())
+			.replace(/_Y_RES_/g, (420 * resolutionMultiplier.mesh).toString()),
+		jobId
+		);
+
+		this.addToQueue(job);
+		const result = await resultPromise;
+		return result.thumbnail;
+	  } catch (error) {
+		this.removeFromRunningJobs(jobId);
+		throw error;
+	  }
+	}
 
     public async GenerateThumbnailHead(assetId: number): Promise<string> {
         const job = this.createSoapRequest(
@@ -594,30 +619,27 @@ export default class CommandHandler extends StdExceptions {
         this.addToQueue(job);
         return (await getResult(job.jobId, resolutionMultiplier.game)).thumbnail;
     }
-	
+
 	public async GenerateThumbnailTexture(assetId: number, assetTypeId: number): Promise<string> {
+	  const jobId = uuid.v4();
+	  const resultPromise = getResult(jobId, resolutionMultiplier.texture);
+
+	  try {
 		const jobRequest = this.createSoapRequest(
-			scripts.imageTexture
-				.replace(/65789275746246/g, assetId.toString())
-				.replace(/358843/g, assetTypeId.toString())
-				.replace(/AccessKey/g, conf.authorization)
-			, uuid.v4())
-		
+		  scripts.imageTexture
+			.replace(/65789275746246/g, assetId.toString())
+			.replace(/358843/g, assetTypeId.toString())
+			.replace(/AccessKey/g, conf.authorization),
+		  jobId
+		);
+
 		this.addToQueue(jobRequest);
-		
-		try {
-			const result = await Promise.race([
-				getResult(jobRequest.jobId, 1),
-				new Promise((_, reject) => 
-					setTimeout(() => reject(new Error('Thumbnail generation timeout')), 10000)
-				)
-			]);
-			
-			return result.thumbnail;
-		} catch (e) {
-			this.removeFromRunningJobs(jobRequest.jobId);
-			throw e;
-		}
+		const result = await resultPromise;
+		return result.thumbnail;
+	  } catch (error) {
+		this.removeFromRunningJobs(jobId);
+		throw error;
+	  }
 	}
 	
     public async GenerateThumbnailHeadshot(user: models.AvatarRenderRequest): Promise<string> {
