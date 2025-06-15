@@ -52,20 +52,8 @@ Replace ```your.domain``` with your actual domain inside of that config.json fil
 
 Now in a CMD window use CD to go into that same folder (```2016-roblox-main```), do ```npm i``` and then ```npm run build```.
 
-Now go to ```services/renderer``` and rename the file named ```config.example.json``` to ```config.json``` and change it like this:
-```
-{
-    "rcc": "C:\\where ever your ECS folder is, change this!\\services\\RCCService",
-    "rccexe": "if you have your RCC named something else, change this to like RCC.exe or Server.exe, but it's probably named RCCService.exe so just change it to that",
-    "authorization": "YourAUTH",
-    "baseUrl": "https://yourdomain",
-    "rccPort": 64989,
-    "port": 3040,
-    "websiteBotAuth": "YourBOTAUTH",
-    "thumbnailWebsocketPort": 3189,
-    "webhook": "changetoyourwebhook"
-}
-```
+Now go to ```services/renderer``` and rename the file named ```config.example.json``` to ```config.json``` and change everything inside of it.
+
 -- Replacing URLS --
 
 Go into ```services/renderer/scripts```
@@ -77,13 +65,10 @@ Now, go back into the renderer and run ```npm i```, then ```npm run build```
 
 -- DISCORD --
 
-Replace ```https://bb.zawg.ca/discordcb``` in ```/services/api/public/Data/index.html``` 
-with ```https://your.domain/discordcb``` (change your.domain to your actual domain)
-
 Go to the Discord Developer Portal (```https://discord.com/developers/applications```) and make a new application.
-Then go into OAuth2, and replace the client id in the same line that https://bb.zawg.ca/discordcb used to be in with your client ID.
+Then go into OAuth2, and replace the client id in the appsettings.json with your new client ID and client secret.
 
-Then add your redirect URL under the client ID section to be ```https://your.domain/discordcb```, replacing your.domain with your domain.
+Then add your redirect URL under the client ID section to be ```https://your.domain/discordcb```, replacing your.domain with your domain. Do the same for ```https://your.domain/forgotcb```
 
 You should also update the client ID, secret and redirect URL in ```appsettings.json``` or else it would not work.
 
