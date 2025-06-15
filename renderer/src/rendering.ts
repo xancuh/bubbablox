@@ -49,7 +49,7 @@ export const getResult = (key: string, upscaleAmount: number): Promise<any> => {
 				if (!shutdownTimer) {
 					console.log('[info] creating shutdown timer');
 					shutdownTimer = setTimeout(() => {
-						process.exit(0);
+						console.log('[info] not shutting down boi');
 					}, 24 * 60 * 60 * 1000);
 				}
 				let originalImage = await sharp(Buffer.from(data.thumbnail, 'base64')).metadata();

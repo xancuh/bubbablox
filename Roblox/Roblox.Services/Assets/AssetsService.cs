@@ -702,22 +702,25 @@ public class AssetsService : ServiceBase, IService
 			// Treat Shirts and Pants as Hats
 			case Models.Assets.Type.Shirt:
 			case Models.Assets.Type.Pants:
-			case Models.Assets.Type.TeeShirt:
 				thumbRequests.Add(CreateAssetThumbnail(assetId, cancellationToken));
 				break;
+				
+			case Models.Assets.Type.TeeShirt:
+					thumbRequests.Add(CreateTeeShirtThumbnail(assetId, cancellationToken));
+					break;
 				
 			case Type.Head:
                 thumbRequests.Add(CreateHeadThumbnail(assetId, cancellationToken));
                 break;
 				
-/* 			case Type.Mesh:
+			case Type.Mesh:
 				thumbRequests.Add(CreateMeshThumbnail(assetId, cancellationToken));
-                break; */
+                break;
 
 			case Type.Hat:
 			case Type.Place:
 			case Type.Gear:
-			case Type.Mesh:
+			//case Type.Mesh:
 			case Type.HairAccessory:
 			case Type.NeckAccessory:
 			case Type.ShoulderAccessory:
