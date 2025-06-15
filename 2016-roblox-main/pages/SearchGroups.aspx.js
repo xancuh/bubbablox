@@ -6,7 +6,7 @@ import { getFullUrl, getBaseUrl } from '../lib/request';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const GroupSearchPage = () => {
+const GroupSearch = () => {
   const buttonStyles = useButtonStyles();
   const router = useRouter();
   const { keyword: initialKeyword = "" } = router.query;
@@ -194,4 +194,4 @@ const GroupSearchPage = () => {
   );
 };
 
-export default GroupSearchPage;
+export default GroupSearch;
