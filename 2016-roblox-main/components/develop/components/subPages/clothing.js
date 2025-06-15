@@ -41,6 +41,12 @@ const detailsMap = {
     title: 'Decals',
     fileLabel: '.png or .jpeg',
   },
+  4: {
+    name: 'Mesh',
+    namePlural: 'Meshes',
+    title: 'a Mesh',
+    fileLabel: '.mesh',
+  },
 }
 
 const useStyles = createUseStyles({

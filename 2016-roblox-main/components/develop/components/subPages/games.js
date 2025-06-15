@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
-import { useRouter } from "next/router";  // Changed from react-router-dom to next/router
+import { useRouter } from "next/router";
 import {getGroupGames, getUserGames} from "../../../../services/games";
 import AuthenticationStore from "../../../../stores/authentication";
 import useButtonStyles from "../../../../styles/buttonStyles";
@@ -16,7 +16,7 @@ const GamesSubPage = props => {
   const buttonStyles = useButtonStyles();
   const [games, setGames] = useState(null);
   const auth = AuthenticationStore.useContainer();
-  const router = useRouter();  // Using Next.js router
+  const router = useRouter();
 
   useEffect(() => {
     setGames(null);

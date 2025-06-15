@@ -30,7 +30,7 @@ public class RobloxPlayerCorsMiddleware
         var scriptSrc =
             "'unsafe-eval' 'self' https://hcaptcha.com https://*.hcaptcha.com https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js http://localhost:5000";
         
-        return "default-src 'self'; img-src https://bb.zawg.ca https://*.zawg.ca http://bb.zawg.ca https://*.bb.zawg.ca data:; child-src 'self'; script-src "+scriptSrc+"; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://*.bb.zawg.ca https://bb.zawg.ca https://*.zawg.ca https://zawg.ca http://zawg.ca http://*.zawg.ca; style-src 'unsafe-inline' 'self' https://fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css; font-src 'self' fonts.gstatic.com; connect-src "+connectSrc+"; worker-src 'self';";
+        return "default-src 'self'; img-src https://bb.zawg.ca https://*.zawg.ca http://bb.zawg.ca https://*.bb.zawg.ca data:; child-src 'self'; script-src https://esm.sh "+scriptSrc+"; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://*.bb.zawg.ca https://bb.zawg.ca https://*.zawg.ca https://zawg.ca http://zawg.ca http://*.zawg.ca; style-src 'unsafe-inline' 'self' https://fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css; font-src 'self' fonts.gstatic.com; connect-src "+connectSrc+"; worker-src 'self';";
     }
     
     public async Task InvokeAsync(HttpContext ctx)

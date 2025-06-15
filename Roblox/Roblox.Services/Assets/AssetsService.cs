@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text;
 using System.Text.RegularExpressions;
 using Dapper;
 using FFMpegCore;
@@ -215,6 +216,36 @@ public class AssetsService : ServiceBase, IService
     }
 
     private static HttpClient assetValidationClient { get; } = new();
+	
+	public async Task<bool> ValidateMeshFile(Stream mesh)
+	{
+		mesh.Position = 0;
+		Writer.Info(LogGroup.AssetValidation, "validating mesh.");
+		try
+		{
+			using var reader = new StreamReader(mesh, Encoding.ASCII, false, 1024, true);
+			var firstLine = await reader.ReadLineAsync();
+			
+			if (firstLine != null && 
+				(firstLine.Equals("version 1.00", StringComparison.OrdinalIgnoreCase) || 
+				firstLine.Equals("version 1.01", StringComparison.OrdinalIgnoreCase) ||
+				firstLine.Equals("version 2.00", StringComparison.OrdinalIgnoreCase)))
+			{
+				return true;
+			}
+			
+			return false;
+		}
+		catch (Exception ex)
+		{
+			Writer.Info(LogGroup.AssetValidation, "Error validating mesh: {0}", ex.Message);
+			return false;
+		}
+		finally
+		{
+			mesh.Position = 0;
+		}
+	}
 
     public async Task<bool> ValidateAssetFile(Stream file, Models.Assets.Type assetType)
     {

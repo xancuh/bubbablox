@@ -187,6 +187,12 @@
 													<audio controls={true}>
 														<source src={`/admin-api/api/assets/get-asset-stream?assetId=${asset.asset_id || asset.id}`} />
 													</audio>
+												{:else if asset.assetType === 'Mesh'}
+													<iframe
+														src={`https://zawg.ca/assets/mesh/?url=${encodeURIComponent(asset.content_url)}`}
+														style="width: 100%; height: 300px; border: 1px solid #ccc;"
+														title={`3DViewer for mesh ${asset.name}`}
+													></iframe>
 												{:else}
 													<img on:error={(e) => {
 														console.log('[warn] image load failure',e);

@@ -439,6 +439,10 @@ textarea {
   -webkit-appearance: button;
 }
 
+iframe {
+  border: 0;
+}
+
 summary {
   display: list-item;
   cursor: pointer;

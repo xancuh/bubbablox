@@ -527,6 +527,12 @@ public class AdminApiController : ControllerBase
 	[HttpGet("assets/pending-assets/image/{contentUrl}")]
 	public async Task<IActionResult> GetPendingImage(string contentUrl)
 	{
+		// for security as anyone could do path traversal
+		if (contentUrl.Contains("..") || Path.IsPathRooted(contentUrl))
+		{
+			return BadRequest("Could not find image");
+		}
+		
 		if (string.IsNullOrWhiteSpace(contentUrl))
 		{
 			Console.WriteLine("Content URL is null/empty");
@@ -535,25 +541,54 @@ public class AdminApiController : ControllerBase
 
 		var assetDirectory = Configuration.AssetDirectory;
 
-		var filePath = Path.Combine(assetDirectory, contentUrl);
+		var file = Path.Combine(assetDirectory, contentUrl);
 
-		if (!System.IO.File.Exists(filePath))
+		if (!System.IO.File.Exists(file))
 		{
 			return NotFound();
 		}
 
 		try
 		{
-			var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+			var stream = new FileStream(file, FileMode.Open, FileAccess.Read);
 			var contentType = "image/png"; // are the files always png?
-			return File(fileStream, contentType);
+			return File(stream, contentType);
 		}
 		catch (Exception ex)
 		{
-			return StatusCode(500, "Internal server error");
+			return StatusCode(500, "InternalServerError");
+		}
+	}	
+	
+	[HttpGet("assets/pending-assets/mesh/{contentUrl}.obj")]
+	public async Task<IActionResult> GetMeshOBJ(string contentUrl)
+	{
+		// for security as anyone could do path traversal
+		if (contentUrl.Contains("..") || Path.IsPathRooted(contentUrl))
+		{
+			return BadRequest("Could not find OBJ");
+		}
+
+		var obj = Path.Combine(Configuration.AssetDirectory, $"{contentUrl}.obj");
+
+		if (!System.IO.File.Exists(obj))
+		{
+			return NotFound("OBJ file not found");
+		}
+
+		try
+		{
+			var stream = new FileStream(obj, FileMode.Open, FileAccess.Read);
+			var file = Path.GetFileName(obj);
+			return File(stream, "text/plain", file);
+		}
+		catch (Exception ex)
+		{
+			Writer.Info(LogGroup.AdminApi, $"Error serving OBJ file {contentUrl}: {ex}");
+			return StatusCode(500, "Error serving file");
 		}
 	}
-		
+				
 	[HttpGet("assets/pending-assets"), StaffFilter(Access.GetPendingModerationItems)]
 	public async Task<IEnumerable<dynamic>> GetPendingAssets()
 	{
@@ -621,7 +656,14 @@ public class AdminApiController : ControllerBase
 
 				if (item.content_url != null)
 				{
-					item.content_url = $"/admin-api/api/assets/pending-assets/image/{item.content_url}";
+					if (item.assetType == Type.Mesh)
+					{
+						item.content_url = $"/admin-api/api/assets/pending-assets/mesh/{latest.contentUrl}.obj";
+					}
+					else
+					{
+						item.content_url = $"/admin-api/api/assets/pending-assets/image/{item.content_url}";
+					}
 				}
 
 				result.Add(item);

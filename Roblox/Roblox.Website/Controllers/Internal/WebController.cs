@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Web;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Roblox.Dto.Assets;
 using Roblox.Exceptions;
@@ -574,6 +576,7 @@ public class WebController : ControllerBase
         Models.Assets.Type.Shirt,
         Models.Assets.Type.Pants,
         Models.Assets.Type.Image,
+		Models.Assets.Type.Mesh
     };
 
     private static int pendingAssetUploads { get; set; } = 0;
@@ -665,8 +668,9 @@ public class WebController : ControllerBase
             request.assetType is Models.Assets.Type.Shirt or Models.Assets.Type.Pants or Models.Assets.Type.TeeShirt;
         var isAudio = request.assetType is Models.Assets.Type.Audio;
         var isImage = request.assetType is Models.Assets.Type.Image;
+		var isMesh = request.assetType is Models.Assets.Type.Mesh;
 
-        if (!isClothing && !isAudio && !isImage)
+        if (!isClothing && !isAudio && !isImage && !isMesh)
             throw new RobloxException(400, 0, "Endpoint does not support this assetType: " + request.assetType);
         
         // Limit of 50 assets globally pending approval before failure
@@ -816,8 +820,88 @@ public class WebController : ControllerBase
                     userSession.userId, stream, Models.Assets.Type.Audio, Genre.All, ModerationStatus.AwaitingApproval);
                 return asset;
             }
+			else if (isMesh)
+			{
+				var file = Path.GetExtension(request.file.FileName).ToLower();
+				if (file != ".mesh")
+				{
+					throw new BadRequestException(0, "You can only upload .mesh files");
+				}
+							
+				var stream = request.file.OpenReadStream();
+				
+				// validate mesh
+				var isValid = await services.assets.ValidateMeshFile(stream);
+				if (!isValid)
+					throw new BadRequestException(0, "Invalid mesh file");
+				
+				stream.Position = 0;
+				// create
+				var asset = await services.assets.CreateAsset(
+					request.name, 
+					null, 
+					userSession.userId, 
+					creatorType, 
+					creatorId, 
+					stream, 
+					Models.Assets.Type.Mesh, 
+					Genre.All, 
+					ModerationStatus.AwaitingApproval);
+				
+				// give
+				await services.users.CreateUserAsset(userSession.userId, asset.assetId);
 
-            throw new BadRequestException(0, "Invalid assetType");
+				// generate OBJ so admins can see a preview
+				try 
+				{
+					Console.WriteLine("generating OBJ...");
+					var version = await services.assets.GetLatestAssetVersion(asset.assetId);
+					var content = Path.Combine(Configuration.AssetDirectory, version.contentUrl);
+					var obj = Path.ChangeExtension(content, ".obj");
+					
+					var OBJProcess = new ProcessStartInfo
+					{
+						FileName = Path.Combine(Configuration.PublicDirectory, "OBJToRBXMesh.exe"),
+						Arguments = $"\"{content}\" -obj",
+						WorkingDirectory = Configuration.AssetDirectory,
+						RedirectStandardOutput = true,
+						RedirectStandardError = true,
+						UseShellExecute = false,
+						CreateNoWindow = true
+					};
+					
+					using (var process = Process.Start(OBJProcess))
+					{
+						process.StartInfo.RedirectStandardOutput = true;
+						process.StartInfo.RedirectStandardError = true;
+						
+						await process.WaitForExitAsync();
+						
+						var output = await process.StandardOutput.ReadToEndAsync();
+						var error = await process.StandardError.ReadToEndAsync();
+						
+						if (process.ExitCode != 0 || !System.IO.File.Exists(obj))
+						{
+							Console.WriteLine($"could not generate OBJ for mesh {asset.assetId}. code: {process.ExitCode}");
+							Console.WriteLine($"out: {output}");
+							Console.WriteLine($"error: {error}");
+						}
+						else
+						{
+							Console.WriteLine($"generated OBJ for mesh {asset.assetId}");
+							Console.WriteLine($"out: {output}");
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"error generating OBJ for mesh {asset.assetId}: {e}");
+				}
+
+				return asset;
+			}
+
+            throw new BadRequestException(0, "Invalid asset type");
         }
         finally
         {
