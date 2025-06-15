@@ -194,8 +194,4 @@ const GroupSearch = () => {
   );
 };
 
-<<<<<<< HEAD
 export default GroupSearch;
-=======
-export default GroupSearch;
->>>>>>> 80c3796 (Make isstaff better)
