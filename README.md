@@ -121,7 +121,7 @@ You should also update everything in ```webserver\apache\conf\httpd.conf``` to y
 
 Then go into ```webserver/root/game``` then go into join.ashx and change the bs.zawg.ca and sitetest.zawg.ca URL's to your website URL.
 
-Do the same for PlaceLauncher.ashx.
+Do the same for PlaceLauncher.ashx and the asset endpoints, so it can actually get assets from your site in game.
 
 Then you should be able to start the webserver, and connect using the client.
 
