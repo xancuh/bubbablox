@@ -58,6 +58,7 @@ Roblox.Configuration.DiscordClientID = configuration.GetSection("DiscordClientID
 Roblox.Configuration.DiscordClientSecret = configuration.GetSection("DiscordClientSecret").Value;
 Roblox.Configuration.DiscordRedirect = configuration.GetSection("DiscordRedirect").Value;
 Roblox.Configuration.DiscordForgotPasswordRedirect = configuration.GetSection("DiscordForgotPasswordRedirect").Value;
+Roblox.Configuration.DiscordLoginRedirect = configuration.GetSection("DiscordLoginRedirect").Value;
 Roblox.Configuration.DiscordKey = configuration.GetSection("DiscordKey").Value;
 Roblox.Configuration.HCaptchaPublicKey = configuration.GetSection("HCaptcha:Public").Value;
 Roblox.Configuration.HCaptchaPrivateKey = configuration.GetSection("HCaptcha:Private").Value;

@@ -832,7 +832,7 @@ namespace Roblox.Website.Controllers
 			var userId = await services.users.GetUserIdFromDiscordId(userInfo.id);
 			if (userId == 0)
 			{
-				return Redirect("/forgotpasswordOrUsername?forgotmsg=No account is linked to this Discord.");
+				return Redirect("/forgotpasswordOrUsername?forgotmsg=There is no account linked to this Discord");
 			}
 
 			var resetToken = Guid.NewGuid().ToString();
@@ -891,7 +891,7 @@ namespace Roblox.Website.Controllers
 				return Redirect("/forgotpasswordOrUsername?forgotmsg=Invalid token, please try again!");
 			}
 
-			// Convert expiry to UTC if it's not already
+			// make expiry UTC if it's not already cause it likes to expire itself
 			if (expiry.Kind != DateTimeKind.Utc)
 			{
 				expiry = expiry.ToUniversalTime();
@@ -982,10 +982,10 @@ namespace Roblox.Website.Controllers
 				return Redirect("/?signupmsg=Discord verification failed. Please try again.");
 			}
 
-			var tokenResponse = await Response.Content.ReadFromJsonAsync<TokenRes>();
+			var token = await Response.Content.ReadFromJsonAsync<TokenRes>();
 			
 			httpClient.DefaultRequestHeaders.Authorization = 
-				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResponse.access_token);
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
 			
 			var userres = await httpClient.GetAsync("https://discord.com/api/users/@me");
 			var userinfo = await userres.Content.ReadFromJsonAsync<DiscordUser>();
@@ -1036,6 +1036,94 @@ namespace Roblox.Website.Controllers
 		{
 			Console.WriteLine($"Discord verification error: {ex.Message}");
 			return Redirect("/?signupmsg=Discord verification failed. Please try again.");
+		}
+	}
+	
+	[HttpGetBypass("login-with-discord")]
+	public async Task<MVC.IActionResult> DiscordLoginRedir()
+	{
+		var clientId = Roblox.Configuration.DiscordClientID;
+		var redirecturl = Uri.EscapeDataString(Roblox.Configuration.DiscordLoginRedirect);
+		var scope = Uri.EscapeDataString("identify");
+		
+		return new MVC.RedirectResult(
+			$"https://discord.com/api/oauth2/authorize?client_id={clientId}&redirect_uri={redirecturl}&response_type=code&scope={scope}"
+		);
+	}
+	
+	[HttpGetBypass("logincb")]
+	public async Task<MVC.IActionResult> DiscordLogin([MVC.FromQuery] string code)
+	{
+		try
+		{
+			if (Request.Query.ContainsKey("error"))
+			{
+				return Redirect("/?loginmsg=Discord login failed, please try again!");
+			}
+
+			var httpClient = new HttpClient();
+			var parameters = new Dictionary<string, string>
+			{
+				{"client_id", Roblox.Configuration.DiscordClientID},
+				{"client_secret", Roblox.Configuration.DiscordClientSecret},
+				{"grant_type", "authorization_code"},
+				{"code", code},
+				{"redirect_uri", Roblox.Configuration.DiscordLoginRedirect}
+			};
+
+			var token = await httpClient.PostAsync("https://discord.com/api/oauth2/token", 
+				new FormUrlEncodedContent(parameters));
+			
+			if (!token.IsSuccessStatusCode)
+			{
+				return Redirect("/?loginmsg=Discord verification failed, please try again!");
+			}
+
+			var tokendata = await token.Content.ReadFromJsonAsync<TokenRes>();
+			
+			httpClient.DefaultRequestHeaders.Authorization = 
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokendata.access_token);
+			
+			var discordinfo = await httpClient.GetAsync("https://discord.com/api/users/@me");
+			var discordID = await discordinfo.Content.ReadFromJsonAsync<DiscordUser>();
+
+			var ID = await services.users.GetUserIdFromDiscordId(discordID.id);
+			if (ID == 0)
+			{
+				return Redirect("/?loginmsg=There is no account linked to this Discord");
+			}
+
+
+			var info = await services.users.GetUserById(ID);
+			if (info.accountStatus != AccountStatus.Ok)
+			{
+				return Redirect("/?loginmsg=Account locked, please contact a staff member");
+			}
+
+			var sessionId = await services.users.CreateSession(ID);
+			var cookie = Middleware.SessionMiddleware.CreateJwt(new Middleware.JwtEntry()
+			{
+				sessionId = sessionId,
+				createdAt = DateTimeOffset.Now.ToUnixTimeSeconds(),
+			});
+
+			HttpContext.Response.Cookies.Append(
+				".ROBLOSECURITY", 
+				cookie,
+				new CookieOptions
+				{
+					HttpOnly = true,
+					Secure = true,
+					SameSite = SameSiteMode.None,
+					Expires = DateTimeOffset.Now.AddYears(1)
+				});
+
+			return Redirect("/home");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Discord login error: {ex}");
+			return Redirect("/?loginmsg=Discord login failed, please try again!");
 		}
 	}
 

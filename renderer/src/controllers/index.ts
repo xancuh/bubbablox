@@ -523,21 +523,24 @@ export default class CommandHandler extends StdExceptions {
     }
 
     public async GenerateThumbnailAsset(assetId: number): Promise<string> {
+		const jobId = uuid.v4();
+		const resultPromise = getResult(jobId, resolutionMultiplier.mesh);
         try {
             const job = this.createSoapRequest(
                 scripts.assetThumbnail
                     .replace(/\{1234\}/g, `{${assetId}}`)
                     .replace(/_X_RES_/g, (420 * resolutionMultiplier.asset).toString())
                     .replace(/_Y_RES_/g, (420 * resolutionMultiplier.asset).toString()),
-                uuid.v4()
+                jobId
             );
             
             await sendtohook(`generating asset ${assetId}'s thumbnail`);
             this.addToQueue(job);
-            const result = await getResult(job.jobId, resolutionMultiplier.asset);
+            const result = await resultPromise;
             await sendtohook(`generated asset ${assetId}'s thumbnail`);
             return result.thumbnail;
         } catch (e) {
+			this.removeFromRunningJobs(jobId);
             await sendtohook(`failed to generate thumbnail for ${assetId}: ${e.message}`);
             throw e;
         }

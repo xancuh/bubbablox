@@ -406,6 +406,7 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
             <input type="submit" id="LoginButton" class="form-control" value="Log In" rbx-form-interaction name="submitLogin" />
         </div>
 		<a id="HeaderForgotPassword" class="navbar-link" href="/forgotpasswordOrUsername">Forgot Username/Password?</a>
+		<a id="HeaderForgotPassword" class="navbar-link" href="/login-with-discord" style="margin-left: 204px;">Login with Discord</a>
 <div id="msgcont">
     <div id="login-error-message" class="text-danger" style="
         display: none;
@@ -422,6 +423,23 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
         </div>
     </div>
 </div>
+
+	<script>
+	  function fixmargin() {
+		const links = document.querySelectorAll('#HeaderForgotPassword.navbar-link[href="/login-with-discord"]');
+		if (links.length) {
+		  const link = links[0];
+		  if (window.innerWidth < 768) {
+			link.style.marginLeft = '0';
+		  } else {
+			link.style.marginLeft = '204px';
+		  }
+		}
+	  }
+
+	  window.addEventListener('load', fixmargin);
+	  window.addEventListener('resize', fixmargin);
+	</script>
 
 	<script>
 	function getCookie(name) {
