@@ -279,7 +279,7 @@ public class ThumbnailsControllerV1 : ControllerBase
 				{
 					targetId = id,
 					state = ThumbnailState.Completed,
-					imageUrl = "https://bb.zawg.ca/img/placeholder/icon_one.png"
+					imageUrl = $"{Roblox.Configuration.BaseUrl}/img/placeholder/icon_one.png"
 				});
 			}
 		}
