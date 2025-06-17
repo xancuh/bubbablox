@@ -46,6 +46,7 @@ public enum FeatureFlag
     ForumsEnabled,
     ForumPostingEnabled,
     CurrencyExchangeEnabled,
+	TradeCurrencyEnabled
     // Features End. Below are fixes.
     // UseGameJoinV2,
     SupportTicket,

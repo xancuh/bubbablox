@@ -982,10 +982,10 @@ namespace Roblox.Website.Controllers
 				return Redirect("/?signupmsg=Discord verification failed. Please try again.");
 			}
 
-			var token = await Response.Content.ReadFromJsonAsync<TokenRes>();
+			var discordtoken = await Response.Content.ReadFromJsonAsync<TokenRes>();
 			
 			httpClient.DefaultRequestHeaders.Authorization = 
-				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", discordtoken.access_token);
 			
 			var userres = await httpClient.GetAsync("https://discord.com/api/users/@me");
 			var userinfo = await userres.Content.ReadFromJsonAsync<DiscordUser>();

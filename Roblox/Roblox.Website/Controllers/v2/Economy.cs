@@ -223,7 +223,12 @@ public class EconomyControllerV2 : ControllerBase
         return await GetTransactions(groupId, CreatorType.Group, transactionType, limit, cursor);
     }
 
-    private void FeatureCheckCurrencyExchange()
+    private void FeatureCheckTradeCurrency()
+    {
+        FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled, FeatureFlag.TradeCurrencyEnabled);
+    }
+	
+	   private void FeatureCheckCurrencyExchange()
     {
         FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled, FeatureFlag.CurrencyExchangeEnabled);
     }
@@ -231,7 +236,7 @@ public class EconomyControllerV2 : ControllerBase
     [HttpGet("currency-exchange/market/activity")]
     public async Task<dynamic> GetMarketActivity()
     {
-        FeatureCheckCurrencyExchange();
+        FeatureCheckTradeCurrency();
         
         var robuxAverage = await services.currencyExchange.GetAverageRate(CurrencyType.Robux);
         var tixAverage = await services.currencyExchange.GetAverageRate(CurrencyType.Tickets);
@@ -273,7 +278,7 @@ public class EconomyControllerV2 : ControllerBase
 	[HttpPost("currency-exchange/orders/create/trade")]
     public async Task CreateCurrencyExchangeOrder([Required, FromBody] CreateExchangeOrderRequest request)
     {
-        FeatureCheckCurrencyExchange();
+        FeatureCheckTradeCurrency();
         await services.currencyExchange.PlaceOrder(safeUserSession.userId, request.amount, request.desiredRate,
             request.sourceCurrency, request.isMarketOrder);
     }
@@ -326,14 +331,14 @@ public class EconomyControllerV2 : ControllerBase
     [HttpPost("currency-exchange/orders/{orderId:long}/close")]
     public async Task CloseOrder(long orderId)
     {
-        FeatureCheckCurrencyExchange();
+        FeatureCheckTradeCurrency();
         await services.currencyExchange.CloseOrder(safeUserSession.userId, orderId);
     }
 
     [HttpGet("currency-exchange/orders/my/count")]
     public async Task<dynamic> CountOrdersByUser()
     {
-        FeatureCheckCurrencyExchange();
+        FeatureCheckTradeCurrency();
         var result = await services.currencyExchange.CountPositionsByUser(safeUserSession.userId);
         return new
         {
@@ -344,7 +349,7 @@ public class EconomyControllerV2 : ControllerBase
     [HttpGet("currency-exchange/orders/my")]
     public async Task<RobloxCollection<TradeCurrencyOrder>> GetMyOrders(long startId, CurrencyType currency)
     {
-        FeatureCheckCurrencyExchange();
+        FeatureCheckTradeCurrency();
         var result = await services.currencyExchange.GetPositionsByUser(safeUserSession.userId, currency, startId);
         return new()
         {
