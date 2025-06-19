@@ -41,6 +41,7 @@ using Roblox.Services.App.FeatureFlags;
 using Roblox.Services.Exceptions;
 using Roblox.Website.Filters;
 using Roblox.Website.WebsiteModels.Asset;
+using Roblox.Website.WebsiteModels.Admin.MigrateUGC;
 using Type = Roblox.Models.Assets.Type;
 
 // ReSharper disable InconsistentNaming
@@ -550,9 +551,9 @@ public class AdminApiController : ControllerBase
 
 		try
 		{
-			var stream = new FileStream(file, FileMode.Open, FileAccess.Read);
-			var contentType = "image/png"; // are the files always png?
-			return File(stream, contentType);
+			var str = new FileStream(file, FileMode.Open, FileAccess.Read);
+			var ct = "image/png"; // are the files always png?
+			return File(str, ct);
 		}
 		catch (Exception ex)
 		{
@@ -578,9 +579,9 @@ public class AdminApiController : ControllerBase
 
 		try
 		{
-			var stream = new FileStream(obj, FileMode.Open, FileAccess.Read);
+			var str = new FileStream(obj, FileMode.Open, FileAccess.Read);
 			var file = Path.GetFileName(obj);
-			return File(stream, "text/plain", file);
+			return File(str, "text/plain", file);
 		}
 		catch (Exception ex)
 		{
@@ -699,6 +700,26 @@ public class AdminApiController : ControllerBase
 			id = request.assetId,
 		});
 		await services.assets.InsertAssetModerationLog(request.assetId, userSession.userId, newStatus);
+		
+		// send message to asset creator if declined
+		if (!request.isApproved)
+		{
+			try 
+			{
+				var assetInfo = await services.assets.GetAssetCatalogInfo(request.assetId);
+				var latestVersion = await services.assets.GetLatestAssetVersion(request.assetId);
+				
+				await services.privateMessages.CreateMessage(latestVersion.creatorId, 1, "Asset Declined",
+					$"Hello,\n" +
+					$"Your asset, {assetInfo.name} (ID: {request.assetId}) was declined due to it being inappropriate or violating our policies. Please do not upload assets that violate our rules.\n\n" +
+					$"Thank you, The Roblox Team");
+			}
+			catch (Exception ex)
+			{
+				Writer.Info(LogGroup.AdminApi, "Failed to send decline message for asset {0}: {1}", request.assetId, ex);
+			}
+		}
+
 		var children = (await db.QueryAsync<AssetVersionWithIdEntry>("SELECT DISTINCT asset_id as assetId FROM asset_version WHERE content_id = :id", new
 		{
 			id = request.assetId,
@@ -737,10 +758,10 @@ public class AdminApiController : ControllerBase
 		// re-render the next asset if the approved asset is an image and the next asset is a teeshirt, pants, or shirt
 		if (request.isApproved && newStatus == ModerationStatus.ReviewApproved)
 		{
-			var approvedAssetDetails = await services.assets.GetAssetCatalogInfo(request.assetId);
-			if (approvedAssetDetails.assetType == Type.Image)
+			var assetdetails = await services.assets.GetAssetCatalogInfo(request.assetId);
+			if (assetdetails.assetType == Type.Image)
 			{
-				Console.WriteLine($"image {request.assetId} ({approvedAssetDetails.name}) was approved, but skipping render");
+				Console.WriteLine($"image {request.assetId} ({assetdetails.name}) was approved, but skipping render");
 
 				_ = Task.Run(async () => 
 				{
@@ -791,9 +812,9 @@ public class AdminApiController : ControllerBase
 		{
 			stream.Position = 0;
 			
-			using (var fileStream = new FileStream(newthumbpath, FileMode.Create))
+			using (var str = new FileStream(newthumbpath, FileMode.Create))
 			{
-				await thumbnail.CopyToAsync(fileStream);
+				await thumbnail.CopyToAsync(str);
 			}
 
 			await db.ExecuteAsync(
@@ -2919,11 +2940,322 @@ Thank you for your understanding,
         return asset;
     }
 
-    [HttpPost("asset/create/from-roblox"), StaffFilter(Access.MigrateAssetFromRoblox)]
-    public async Task<dynamic> CopyAnyItemFromRoblox([Required, FromBody] MigrateItemAlternateRequest request)
-    {
-        return await MigrateItem.MigrateItemFromRoblox(request.url);
-    }
+	private long GetAssetIDFromURL(string url)
+	{
+		var match = Regex.Match(url, @"catalog/(\d+)");
+		return match.Success ? long.Parse(match.Groups[1].Value) : 0;
+	}
+
+	[HttpPost("asset/copy-ugc")]
+	[StaffFilter(Access.MigrateAssetFromRoblox)]
+	public async Task<IActionResult> CopyUGCFromRoblox([FromForm] MigrateAssetRequest request)
+	{
+		string rbxm = null;
+		string rbxmx = null;
+		string Mesh = null;
+		string OBJ = null;
+		string luapath = null;
+		var filestoclean = new List<string>();
+		string CWD = null;
+
+		try
+		{
+			CWD = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+			Directory.CreateDirectory(CWD);
+			Writer.Info(LogGroup.AdminApi, $"made temp folder: {CWD}");
+
+			if (request.OBJ == null || request.OBJ.Length == 0)
+				throw new StaffException("OBJ file is required");
+
+			var assetId = GetAssetIDFromURL(request.rbxURL);
+			Writer.Info(LogGroup.AdminApi, $"got asset ID: {assetId}");
+			if (assetId <= 0)
+				throw new StaffException("Bad Roblox URL! Is it valid?");
+
+			rbxm = Path.Combine(CWD, $"{Guid.NewGuid()}.rbxm");
+			await DownloadRobloxAsset(assetId, rbxm);
+			filestoclean.Add(rbxm);
+			Writer.Info(LogGroup.AdminApi, $"Downloaded RBXM to: {rbxm}");
+
+			OBJ = Path.Combine(CWD, $"{Guid.NewGuid()}.obj");
+			await using (var stream = System.IO.File.Create(OBJ))
+			{
+				await request.OBJ.CopyToAsync(stream);
+			}
+			filestoclean.Add(OBJ);
+
+			Mesh = await ProcessOBJ(OBJ, CWD);
+			if (!System.IO.File.Exists(Mesh))
+			{
+				throw new StaffException($"Mesh was not created, please try again! Your UGC/OBJ file may be invalid.");
+			}
+			filestoclean.Add(Mesh);
+
+			var newmesh = await UploadUGCMesh(Mesh);
+
+			// convert cause i can't update the mesh in RBXM
+			rbxmx = await ConvertRBXM(rbxm, CWD);
+			filestoclean.Add(rbxmx);
+			Writer.Info(LogGroup.AdminApi, $"converted to RBXMX: {rbxmx}");
+
+			await UpdateRBXM(rbxmx, newmesh); // use RBXMX cause i HATE RBXM SO MUCH!!!
+			Writer.Info(LogGroup.AdminApi, $"updated mesh ID in RBXMX");
+
+					// get asset details from roblox
+					var assetDetails = await GetRBXAssetInfo(assetId);
+					Writer.Info(LogGroup.AdminApi, $"got asset details for: {assetId}");
+
+					var result = await UploadUGC(rbxmx, assetDetails);
+					Writer.Info(LogGroup.AdminApi, $"uploaded UGC successfully");
+
+					return Ok(new MigrationResponse
+					{
+						success = true,
+						meshId = newmesh,
+						message = "Asset copied successfully",
+					});
+				}
+				catch (Exception ex)
+				{
+					Writer.Info(LogGroup.AdminApi, $"Copy failed: {ex}");
+					throw new StaffException($"Copy failed: {ex.Message}");
+				}
+				finally
+				{
+					CleanupFiles(filestoclean);
+					try
+					{
+						if (CWD != null && Directory.Exists(CWD))
+						{
+							Directory.Delete(CWD, true);
+							Writer.Info(LogGroup.AdminApi, $"cleaned up: {CWD}");
+						}
+					}
+					catch (Exception ex)
+					{
+						Writer.Info(LogGroup.AdminApi, $"failed to clean up CWD: {ex}");
+					}
+				}
+			}
+
+		private void CleanupFiles(List<string> files)
+		{
+			foreach (var file in files.Where(System.IO.File.Exists))
+			{
+				try
+				{
+					System.IO.File.Delete(file);
+				}
+				catch (Exception ex)
+				{
+					Writer.Info(LogGroup.AdminApi, $"failed to delete temp file {file}: {ex}");
+				}
+			}
+		}
+		
+	private async Task<string> ConvertRBXM(string rbxm, string CWD)
+	{
+		var rbxmkdir = Path.Combine(Configuration.PublicDirectory, "rbxmk");
+		if (!Directory.Exists(rbxmkdir))
+		{
+			throw new DirectoryNotFoundException($"rbxmk directory not found at: {rbxmkdir}");
+		}
+
+		// copy RBXM to rbxmk
+		var rbxmname = Path.GetFileName(rbxm);
+		var destrbxm = Path.Combine(rbxmkdir, rbxmname);
+		System.IO.File.Copy(rbxm, destrbxm, true);
+		Writer.Info(LogGroup.AdminApi, $"copied RBXM: {destrbxm}");
+
+		var luacont = $@"
+			local input = './{rbxmname}'
+			local output = './{Path.GetFileNameWithoutExtension(rbxmname)}.rbxmx'
+			local file = fs.read(input)
+			fs.write(output, file, 'rbxmx')
+		";
+
+		var script = $"convert_{Path.GetFileNameWithoutExtension(rbxmname)}.lua";
+		var luapath = Path.Combine(rbxmkdir, script);
+		await System.IO.File.WriteAllTextAsync(luapath, luacont);
+
+		// convert!!!!!!!
+		var rbxmkpath = Path.Combine(rbxmkdir, "rbxmk.exe");
+		if (!System.IO.File.Exists(rbxmkpath))
+		{
+			throw new FileNotFoundException($"rbxmk.exe not found at: {rbxmkpath}");
+		}
+
+		var RBXMKProcess = new ProcessStartInfo
+		{
+			FileName = rbxmkpath,
+			Arguments = $"run \"{script}\"",
+			RedirectStandardOutput = true,
+			RedirectStandardError = true,
+			UseShellExecute = false,
+			CreateNoWindow = true,
+			WorkingDirectory = rbxmkdir
+		};
+
+		using var process = Process.Start(RBXMKProcess);
+		var output = await process.StandardOutput.ReadToEndAsync();
+		var error = await process.StandardError.ReadToEndAsync();
+		await process.WaitForExitAsync();
+
+		if (!string.IsNullOrEmpty(error))
+		{
+			Writer.Info(LogGroup.AdminApi, $"RBXMK error: {error}");
+		}
+
+		if (process.ExitCode != 0)
+		{
+			throw new Exception($"rbxmk process exited. code: {process.ExitCode}, error: {error}");
+		}
+
+		var outFile = Path.GetFileNameWithoutExtension(rbxmname) + ".rbxmx";
+		var outPath = Path.Combine(rbxmkdir, outFile);
+		if (!System.IO.File.Exists(outPath))
+		{
+			throw new FileNotFoundException($"RBXMX not found at: {outPath}");
+		}
+
+		var finaloutPath = Path.Combine(CWD, outFile);
+		System.IO.File.Move(outPath, finaloutPath);
+
+		try
+		{
+			System.IO.File.Delete(destrbxm);
+			System.IO.File.Delete(luapath);
+			Writer.Info(LogGroup.AdminApi, $"cleaned up temp files in rbxmk dir");
+		}
+		catch (Exception ex)
+		{
+			Writer.Info(LogGroup.AdminApi, $"failed to clean up RBXMK files: {ex}");
+		}
+
+		return finaloutPath;
+	}
+	
+	// TODO: does this already exist? idk but it's easier so i don't care
+	private async Task<string> DownloadRobloxAsset(long assetId, string outPath)
+	{
+		var assetendpoint = $"{Configuration.GSUrl}/asset/roblox/?id={assetId}";
+		
+		using var client = new HttpClient();
+		var response = await client.GetAsync(assetendpoint);
+		response.EnsureSuccessStatusCode();
+		
+		await using var stream = System.IO.File.Create(outPath);
+		await response.Content.CopyToAsync(stream);
+		
+		return outPath;
+	}
+
+	private async Task<string> ProcessOBJ(string OBJ, string CWD)
+	{
+		var convertedmesh = Path.Combine(CWD, $"{Path.GetFileNameWithoutExtension(OBJ)}.mesh");
+
+		var meshconvertpath = Path.Combine(Configuration.PublicDirectory, "OBJToRBXMesh.exe");
+		if (!System.IO.File.Exists(meshconvertpath))
+		{
+			throw new FileNotFoundException($"OBJ converter not found at: {meshconvertpath}");
+		}
+
+		var OBJProcess = new ProcessStartInfo
+		{
+			FileName = meshconvertpath,
+			Arguments = $"\"{OBJ}\" 1.00",
+			RedirectStandardOutput = true,
+			RedirectStandardError = true,
+			UseShellExecute = false,
+			CreateNoWindow = true,
+			WorkingDirectory = CWD
+		};
+		
+		using var process = Process.Start(OBJProcess);
+		var output = await process.StandardOutput.ReadToEndAsync();
+		var error = await process.StandardError.ReadToEndAsync();
+		await process.WaitForExitAsync();
+		
+		if (!string.IsNullOrEmpty(error))
+		{
+			Writer.Info(LogGroup.AdminApi, $"OBJ convert error: {error}");
+		}
+		
+		if (process.ExitCode != 0)
+		{
+			throw new Exception($"OBJ convert process exited. code: {process.ExitCode}, error: {error}");
+		}
+		
+		if (!System.IO.File.Exists(convertedmesh))
+		{
+			throw new FileNotFoundException($"mesh file not found at: {convertedmesh}");
+		}
+		
+		return convertedmesh;
+	}
+
+	private async Task<long> UploadUGCMesh(string Mesh)
+	{
+		await using var stream = System.IO.File.OpenRead(Mesh);
+		var result = await services.assets.CreateAsset(
+			Path.GetFileNameWithoutExtension(Mesh),
+			"Mesh for copied UGC",
+			1,
+			CreatorType.User,
+			1,
+			stream,
+			Type.Mesh,
+			Genre.All,
+			ModerationStatus.ReviewApproved,
+			DateTime.UtcNow,
+			DateTime.UtcNow
+		);
+		
+		return result.assetId;
+	}
+
+	private async Task UpdateRBXM(string rbxm, long newmesh)
+	{
+		var content = await System.IO.File.ReadAllTextAsync(rbxm);
+		
+		content = Regex.Replace(content, @"<string name=""MeshId"">rbxassetid://\d+</string>", 
+			$@"<string name=""MeshId"">rbxassetid://{newmesh}</string>");
+
+		content = Regex.Replace(content, @"<Content name=""MeshId""><url>rbxassetid://\d+</url></Content>", 
+			$@"<Content name=""MeshId""><url>rbxassetid://{newmesh}</url></Content>");
+		
+		await System.IO.File.WriteAllTextAsync(rbxm, content);
+	}
+	
+	// TODO: does this also exist somewhere?
+	private async Task<RBXAssetDetails> GetRBXAssetInfo(long assetId)
+	{
+		using var client = new HttpClient();
+		var response = await client.GetAsync($"https://economy.roblox.com/v2/assets/{assetId}/details");
+		response.EnsureSuccessStatusCode();
+		
+		var content = await response.Content.ReadAsStringAsync();
+		return JsonConvert.DeserializeObject<RBXAssetDetails>(content);
+	}
+	
+	// this SHOULD work with the existing DTO model i thnink
+	private async Task<CreateResponse> UploadUGC(string rbxm, RBXAssetDetails details)
+	{
+		await using var stream = System.IO.File.OpenRead(rbxm);
+		return await services.assets.CreateAsset(
+			details.Name,
+			details.Description,
+			1,
+			CreatorType.User,
+			1,
+			stream,
+			(Type)details.AssetTypeId,
+			Genre.All,
+			ModerationStatus.ReviewApproved,
+			DateTime.UtcNow,
+			DateTime.UtcNow
+		);
+	}
 
     [HttpPost("create-game"), StaffFilter(Access.CreateGameForUser)]
     public async Task<dynamic> CreateGame([Required, FromBody] UserIdRequest request)

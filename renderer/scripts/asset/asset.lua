@@ -90,8 +90,9 @@ end
 
 local function sendthumb(character)
     print("[DEBUG] getting char thumb")
-    local camera = Instance.new("Camera", character)
-    workspace.CurrentCamera = camera
+	
+	local camera = Instance.new("Camera")
+	workspace.CurrentCamera = camera
     
     -- render twice, fixes some issues have no clue why
     ThumbnailGenerator:Click('png', 1, 1, true, false)
@@ -157,8 +158,22 @@ local function renderThumbnail()
     end
     
     model.Parent = workspace
-    local camera = Instance.new("Camera", model)
-    workspace.CurrentCamera = camera
+	local thumbcamera = model:FindFirstChild("ThumbnailCamera", true)
+
+	local camera = Instance.new("Camera")
+	if thumbcamera and thumbcamera:IsA("Camera") then
+		print("[DEBUG] got ThumbnailCamera, copying properties")
+		
+		camera.CFrame = thumbcamera.CFrame
+		camera.CoordinateFrame = thumbcamera.CoordinateFrame
+		camera.Focus = thumbcamera.Focus
+		camera.FieldOfView = thumbcamera.FieldOfView
+		camera.CameraType = thumbcamera.CameraType
+	else
+		print("[DEBUG] no ThumbnailCamera found, using default position")
+	end
+	workspace.CurrentCamera = camera
+	camera.Parent = model
     
     local encoded = ThumbnailGenerator:Click("png", 512, 512, true, true)
     print("[DEBUG] sending thumbnail")

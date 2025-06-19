@@ -94,6 +94,10 @@ public class ItemConfigurationV1 : ControllerBase
         }
         
         var details = await services.assets.GetAssetCatalogInfo(assetId);
+		if (details.moderationStatus != ModerationStatus.ReviewApproved)
+		{
+			throw new BadRequestException(0, "Asset is not approved");
+		}
         if (!sellableAssetTypes.Contains(details.assetType))
         {
             if (!freeAssetTypes.Contains(details.assetType))

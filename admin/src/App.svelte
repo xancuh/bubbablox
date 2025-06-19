@@ -46,6 +46,7 @@ import ResolveAsset from "./pages/ResolveAsset.svelte";
 import Permissions from "./pages/Permissions.svelte";
 import ForceApplication from "./pages/ForceApplication.svelte";
 import UpdateThumbnail from "./pages/UpdateThumbnail.svelte";
+import CopyUGC from "./pages/CopyUGC.svelte";
 	// import 'bootstrap';
 
 	var pushState = history.pushState;
@@ -146,6 +147,9 @@ import UpdateThumbnail from "./pages/UpdateThumbnail.svelte";
 		</Route>
 		<Route path="/admin/asset/copy">
 			<CopyRobloxClothing />
+		</Route>
+		<Route path="/admin/asset/ugc/copy">
+			<CopyUGC />
 		</Route>
 		<Route path="/admin/bundle/copy">
 			<CopyRobloxBundle />

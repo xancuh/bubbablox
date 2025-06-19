@@ -882,14 +882,14 @@ public class WebController : ControllerBase
 						
 						if (process.ExitCode != 0 || !System.IO.File.Exists(obj))
 						{
-							Console.WriteLine($"could not generate OBJ for mesh {asset.assetId}. code: {process.ExitCode}");
+							Console.WriteLine($"could not generate OBJ for mesh {asset.assetId}, exit code: {process.ExitCode}");
 							Console.WriteLine($"out: {output}");
 							Console.WriteLine($"error: {error}");
 						}
 						else
 						{
 							Console.WriteLine($"generated OBJ for mesh {asset.assetId}");
-							Console.WriteLine($"out: {output}");
+							//Console.WriteLine($"out: {output}");
 						}
 					}
 				}

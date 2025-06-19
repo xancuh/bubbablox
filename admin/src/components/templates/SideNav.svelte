@@ -145,6 +145,12 @@
 					permission: "CreateAssetCopiedFromRoblox",
 				},
 				{
+					name: "Copy UGC from ROBLOX",
+					link: "/admin/asset/ugc/copy",
+					icon: CopyIcon,
+					permission: "CreateAssetCopiedFromRoblox",
+				},
+				{
 					name: "Copy Bundle from ROBLOX",
 					link: "/admin/bundle/copy",
 					icon: CopyIcon,

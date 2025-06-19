@@ -224,12 +224,13 @@ public class AssetsService : ServiceBase, IService
 		try
 		{
 			using var reader = new StreamReader(mesh, Encoding.ASCII, false, 1024, true);
-			var firstLine = await reader.ReadLineAsync();
+			var first = await reader.ReadLineAsync();
 			
-			if (firstLine != null && 
-				(firstLine.Equals("version 1.00", StringComparison.OrdinalIgnoreCase) || 
-				firstLine.Equals("version 1.01", StringComparison.OrdinalIgnoreCase) ||
-				firstLine.Equals("version 2.00", StringComparison.OrdinalIgnoreCase)))
+			// TODO: is there another better way to do this?
+			if (first != null && 
+				(first.Equals("version 1.00", StringComparison.OrdinalIgnoreCase) || 
+				first.Equals("version 1.01", StringComparison.OrdinalIgnoreCase) ||
+				first.Equals("version 2.00", StringComparison.OrdinalIgnoreCase)))
 			{
 				return true;
 			}
