@@ -540,9 +540,7 @@ public class AdminApiController : ControllerBase
 			return NotFound();
 		}
 
-		var assetDirectory = Configuration.AssetDirectory;
-
-		var file = Path.Combine(assetDirectory, contentUrl);
+		var file = Path.Combine(Configuration.AssetDirectory, contentUrl);
 
 		if (!System.IO.File.Exists(file))
 		{
@@ -568,6 +566,12 @@ public class AdminApiController : ControllerBase
 		if (contentUrl.Contains("..") || Path.IsPathRooted(contentUrl))
 		{
 			return BadRequest("Could not find OBJ");
+		}
+		
+		if (string.IsNullOrWhiteSpace(contentUrl))
+		{
+			Console.WriteLine("Content URL is null/empty");
+			return NotFound();
 		}
 
 		var obj = Path.Combine(Configuration.AssetDirectory, $"{contentUrl}.obj");
@@ -2975,7 +2979,7 @@ Thank you for your understanding,
 			rbxm = Path.Combine(CWD, $"{Guid.NewGuid()}.rbxm");
 			await DownloadRobloxAsset(assetId, rbxm);
 			filestoclean.Add(rbxm);
-			Writer.Info(LogGroup.AdminApi, $"Downloaded RBXM to: {rbxm}");
+			Writer.Info(LogGroup.AdminApi, $"downloaded RBXM to: {rbxm}");
 
 			OBJ = Path.Combine(CWD, $"{Guid.NewGuid()}.obj");
 			await using (var stream = System.IO.File.Create(OBJ))
@@ -2996,7 +3000,7 @@ Thank you for your understanding,
 			// convert cause i can't update the mesh in RBXM
 			rbxmx = await ConvertRBXM(rbxm, CWD);
 			filestoclean.Add(rbxmx);
-			Writer.Info(LogGroup.AdminApi, $"converted to RBXMX: {rbxmx}");
+			Writer.Info(LogGroup.AdminApi, $"converted RBXM to RBXMX at: {rbxmx}");
 
 			await UpdateRBXM(rbxmx, newmesh); // use RBXMX cause i HATE RBXM SO MUCH!!!
 			Writer.Info(LogGroup.AdminApi, $"updated mesh ID in RBXMX");
@@ -3065,7 +3069,7 @@ Thank you for your understanding,
 		var rbxmname = Path.GetFileName(rbxm);
 		var destrbxm = Path.Combine(rbxmkdir, rbxmname);
 		System.IO.File.Copy(rbxm, destrbxm, true);
-		Writer.Info(LogGroup.AdminApi, $"copied RBXM: {destrbxm}");
+		Writer.Info(LogGroup.AdminApi, $"copied RBXM to: {destrbxm}");
 
 		var luacont = $@"
 			local input = './{rbxmname}'
@@ -3217,7 +3221,7 @@ Thank you for your understanding,
 	private async Task UpdateRBXM(string rbxm, long newmesh)
 	{
 		var content = await System.IO.File.ReadAllTextAsync(rbxm);
-		
+		// TODO: does UGC also use assetdelivery/roblox URLS?
 		content = Regex.Replace(content, @"<string name=""MeshId"">rbxassetid://\d+</string>", 
 			$@"<string name=""MeshId"">rbxassetid://{newmesh}</string>");
 
@@ -3928,6 +3932,16 @@ Thank you for your understanding,
             asset_id = assetId,
         });
     }
+	
+	[HttpGet("assets/total"), StaffFilter(Access.TrackItem)]
+	public async Task<dynamic> GetTotalAssetCount()
+	{
+		var total = await db.QuerySingleOrDefaultAsync<Total>("SELECT COUNT(*) as total FROM asset");
+		return new
+		{
+			total = total.total
+		};
+	}
 
     private Regex matchAssetThumbRegex = new Regex("\\/images\\/thumbnails\\/([a-zA-Z0-9]+)", RegexOptions.Compiled);
     private Regex matchUserThumbRegex = new Regex("(\\/images\\/thumbnails\\/[a-zA-Z0-9\\.\\\\_]+)", RegexOptions.Compiled);

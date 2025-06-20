@@ -619,7 +619,12 @@ public class WebController : ControllerBase
 			fs.Position = 0;
 
 			await services.assets.CreateAssetVersion(request.assetId, safeUserSession.userId, fs);
-			services.assets.RenderAsset(request.assetId, info.assetType);
+			// wait before re-rendering just in case it hasn't updated the RBXL yet
+			_ = Task.Run(async () =>
+			{
+				await Task.Delay(5000);
+				services.assets.RenderAsset(request.assetId, info.assetType);
+			});
 		}
 		finally
 		{

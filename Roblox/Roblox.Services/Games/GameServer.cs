@@ -666,7 +666,7 @@ public class GameServerService : ServiceBase
                 status = JoinStatus.Waiting
             };
     }
-	
+		// TODO: MAKE this configurable
 		private static readonly int[] AllowedNetworkPorts = { 50, 51, 52, 54, 55, 56, 57 };
 			
 		public async Task<string> StartGameServer(long placeId, int RCCPort, int networkServerPort, string jobId, int JobExpiration)

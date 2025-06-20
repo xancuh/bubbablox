@@ -666,6 +666,8 @@ namespace Roblox.Website.Controllers
 		Response.Cookies.Delete("discord_id");
 		Response.Cookies.Delete("discord_profile");
 		Response.Cookies.Delete("signupkey");
+		Response.Cookies.Delete("resetpasstoken");
+		Response.Cookies.Delete("resetpasswordverified");
 
 		HttpContext.Response.Cookies.Append(
 			".ROBLOSECURITY", 
@@ -1360,6 +1362,8 @@ namespace Roblox.Website.Controllers
 			Response.Cookies.Delete("discord_id");
 			Response.Cookies.Delete("discord_profile");
 			Response.Cookies.Delete("signupkey");
+			Response.Cookies.Delete("resetpasstoken");
+			Response.Cookies.Delete("resetpasswordverified");
 			
 			return Redirect("/home");
 		}
@@ -1547,8 +1551,8 @@ namespace Roblox.Website.Controllers
 					context.Response.Headers[header.Key] = header.Value.ToArray();
 				}
 
-				var contentStream = await response.Content.ReadAsStreamAsync();
-				return new MVC.FileStreamResult(contentStream, 
+				var stream = await response.Content.ReadAsStreamAsync();
+				return new MVC.FileStreamResult(stream, 
 					response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
 			}
 			catch (Exception ex)
@@ -1674,8 +1678,8 @@ namespace Roblox.Website.Controllers
 					context.Response.Headers[header.Key] = header.Value.ToArray();
 				}
 
-				var contentStream = await response.Content.ReadAsStreamAsync();
-				return new MVC.FileStreamResult(contentStream, 
+				var stream = await response.Content.ReadAsStreamAsync();
+				return new MVC.FileStreamResult(stream, 
 					response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
 			}
 			catch (Exception ex)
@@ -1689,6 +1693,51 @@ namespace Roblox.Website.Controllers
 		public async Task<string> ValidatePlaceJoin()
 		{
 			return "true";
+		}
+		
+		// server log endpoint
+		[HttpGetBypass("users/{userId}/canmanage/{assetId}")]
+		public async Task<dynamic> CanManagePlace(long userId, long assetId)
+		{
+			try
+			{
+				var userInfo = await services.users.GetUserById(userId);
+				if (userInfo == null)
+				{
+					return new
+					{
+						Success = false,
+						CanManage = false
+					};
+				}
+
+				var assetInfo = await services.assets.GetAssetCatalogInfo(assetId);
+
+				var canManage = await services.assets.CanUserModifyItem(assetId, userId);
+				
+				return new 
+				{
+					Success = true,
+					CanManage = canManage
+				};
+			}
+			catch (RecordNotFoundException)
+			{
+				return new
+				{
+					Success = false,
+					CanManage = false
+				};
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"error in CanManage: {ex}");
+				return new
+				{
+					Success = false,
+					CanManage = false
+				};
+			}
 		}
 
 		[HttpGetBypass("Asset/CharacterFetch.ashx")]

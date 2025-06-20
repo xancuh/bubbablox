@@ -5,7 +5,6 @@ public/images/groups/*
 public.zip
 dist
 tmp
-*.exe
 node_modules
 storage
 public/RobloxApp

@@ -71,7 +71,7 @@
 
             {#if result && result.meshId !== undefined}
                 <p>Link: <a href={`/catalog/${result.meshId + 1}/--`}>View on site</a></p>
-                <p>Product: <a use:link href={`/admin/product/update?assetId=${result.meshId + 1}`}>Update Product</a></p>
+                <p>Product: <a href={`/admin/product/update?assetId=${result.meshId + 1}`}>Update Product</a></p>
             {/if}
         </div>
 

@@ -11,6 +11,8 @@
 	let usersInGame: {user_id: number; username: string; asset_id: number; asset_name: string;}[] | undefined;
 	let numPendingAssets: number|undefined;
 	let numPendingText: number|undefined;
+	let numPendingReports: number|undefined;
+	let totalAssets: number | undefined;
 
 	Promise.all([
 		request.get(`/groups/pending-icons`),
@@ -41,6 +43,11 @@
 			usersInGame = data.data;
 		})
 	}
+	if (rank.hasPermission("ManageReports")) {
+		request.get("/reports/list?status=Pending&offset=0&sort=Asc").then(data => {
+			numPendingReports = data.data.length;
+		});
+	}
 	if (rank.hasPermission('GetUsersOnline')) {
 		request.get('/players/online-count').then(t => {
 			usersOnline = t.data.total;
@@ -51,6 +58,11 @@
 			usersJoinedTotal = data.data.total;
 		});
 	}
+	if (rank.hasPermission("TrackItem")) {
+        request.get<{ total: number }>("/assets/total").then((data) => {
+            totalAssets = data.data.total;
+        });
+    }
 	import * as rank from "../stores/rank";
 	import Permission from "../components/Permission.svelte";
 import { get } from 'svelte/store';
@@ -91,6 +103,11 @@ import { now } from 'svelte/internal';
 				navigate('/admin/asset/approval');
 			}} value='Num Pending Assets' key={numPendingAssets.toLocaleString()} cardClasses="bg-warning bg-gradient pointer" />
 		{/if}
+		{#if numPendingReports != undefined}
+			<DashStatCard onClick={() => {
+				navigate('/admin/reports');
+			}} value='Num Pending Reports' key={numPendingReports.toLocaleString()} cardClasses="bg-danger bg-gradient pointer" />
+		{/if}
 		<Permission p="GetUserJoinCount">
 			<DashStatCard 
 				key={((typeof usersJoinedTotal === "number" && usersJoinedTotal.toLocaleString()) || "-")} 
@@ -102,6 +119,13 @@ import { now } from 'svelte/internal';
 				value="Total (Active) Users" 
 				cardClasses="bg-secondary bg-gradient" 
 			/>
+		</Permission>
+			<Permission p="TrackItem">
+				<DashStatCard 
+					key={totalAssets?.toString() || "-"} 
+					value="Total Assets" 
+					cardClasses="bg-info bg-gradient" 
+				/>
 		</Permission>
 	</div>
 
