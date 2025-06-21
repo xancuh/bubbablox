@@ -1,4 +1,4 @@
-print("[info] gameserver.txt start")
+--print("[info] gameserver.txt start")
 
 ------------------- CONFIG -------------------
 local url = "http://bb.zawg.ca";
@@ -34,7 +34,7 @@ local function sendtohook(content)
 			http:PostAsync(webhook, http:JSONEncode(data), Enum.HttpContentType.ApplicationJson)
 		end)
 		if not success then
-			print("[webhook] failed to send message:", err)
+			--print("[webhook] failed to send message:", err)
 		end
 	end)
 end
@@ -73,8 +73,8 @@ if url then
 	end)
 end
 
-print("[info] start", placeId, "on port", port, "with base", url)
-print("[info] jobId is", game.JobId)
+--print("[info] start", placeId, "on port", port, "with base", url)
+--print("[info] jobId is", game.JobId)
 
 ------------------- FUNCTIONS -------------------
 local function reportplayer(userId, eventType)
@@ -99,7 +99,7 @@ local function pollToReportActivity()
 				placeId = placeId
 			}), false, "application/json")
 		end)
-		print("[info] ping response:", ok, err)
+		--print("[info] ping response:", ok, err)
 		wait(5)
 	end
 	print("[warn] Server no longer OK. Will shut down soon. (No players!)")
@@ -124,7 +124,7 @@ spawn(function()
 		return game:GetService('HttpService'):JSONDecode(result)
 	end)
 	if not ok then
-		print("GetStaff failed because",newList)
+		--print("GetStaff failed because",newList)
 		return
 	end
 	pcall(function()
@@ -149,7 +149,7 @@ local function processModCommand(sender, message)
 				player = p
 				break
 			else
-				print("Not a match!",name,"vs",userToBan)
+				--print("Not a match!",name,"vs",userToBan)
 			end
 		end
 		print("ban", player, userToBan)
@@ -174,7 +174,7 @@ local function processModCommand(sender, message)
 				break
 			end
 		end
-		print("ban", userId)
+		print("unban", userId)
 		if userId ~= nil then
 			local unbanmsg = string.format("**%s** (ID: %d) unbanned **%s** (ID: %d)", 
 				sender.Name, sender.UserId, bannedIds[userId].Name, userId)
@@ -201,7 +201,7 @@ local function getBannedUsersAsync(playersTable)
 	end)
 
 	if not ok then
-		print("getBannedUsersAsync failed because",newList)
+		--print("getBannedUsersAsync failed because",newList)
 		return
 	end
 
@@ -216,20 +216,20 @@ local function getBannedUsersAsync(playersTable)
 		end
 	end)
 	if not ok then
-		print("[error] could not process ban result",banProcErr)
+		--print("[error] could not process ban result",banProcErr)
 	end
 end
 local hasNoPlayerCount = 0
 spawn(function()
 	while true do
 		wait(30)
-		print("Checking banned players...")
+		--print("Checking banned players...")
 		if #game:GetService("Players"):GetPlayers() == 0 then
-			print("[warn] no players. m=",hasNoPlayerCount)
+			--print("[warn] no players. m=",hasNoPlayerCount)
 			serverOk = false
 			hasNoPlayerCount = hasNoPlayerCount + 1
 		else
-			print("game has players, reset mod")
+			--print("game has players, reset mod")
 			hasNoPlayerCount = 0
 		end
 		if hasNoPlayerCount >= 3 then
@@ -244,7 +244,7 @@ end)
 
 game:GetService("Players").PlayerAdded:connect(function(player)
 	playersJoin = playersJoin + 1;
-	print("Player " .. player.userId .. " added")
+	--print("Player " .. player.userId .. " added")
     reportplayer(player.userId, "Join")
 
 	if bannedIds[player.userId] ~= nil then
@@ -257,16 +257,16 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 		sendtohook(userchat)
 		
 		if adminsList ~= nil and adminsList[player.userId] ~= nil then
-			print("is an admin",player)
+			--print("is an admin",player)
 			processModCommand(player, message)
 		end
 	end)
 end)
 
 playersService.PlayerRemoving:connect(function(player)
-	print("Player " .. player.UserId .. " leaving")
+	--print("Player " .. player.UserId .. " leaving")
 	reportplayer(player.UserId, "Leave")
-	print("Reported " .. player.UserId .. " to server list (User left, sending Leave event)")
+	--print("Reported " .. player.UserId .. " to server list (User left, sending Leave event)")
 
 	delay(1, function()
 		if #playersService:GetPlayers() == 0 then 
@@ -281,9 +281,9 @@ local function fixconnect(obj)
 		if string.find(source, ":Connect") then
 			local newSource = string.gsub(source, ":Connect", ":connect")
 			obj.Source = newSource
-			print("[legacy fix] updated :Connect in", obj:GetFullName())
+			--print("[legacy fix] updated :Connect in", obj:GetFullName())
 			if not http.HttpEnabled then
-				warn("[warn] http was disabled, re-enabling")
+				--warn("[warn] http was disabled, re-enabling")
 				http.HttpEnabled = true
 			end
 		end
@@ -296,7 +296,7 @@ end
 ------------------- LOAD GAME + CAMERA -------------------
 if placeId and url then
 	wait()
-	print("[Loader] loading game...")
+	--print("[Loader] loading game...")
 	
 	local wasHttpEnabled = http.HttpEnabled
 	if not wasHttpEnabled then
@@ -325,7 +325,7 @@ if placeId and url then
 		return
 	end
 
-	print("[Loader] loading camera...")
+	--print("[Loader] loading camera...")
 	local success, model = pcall(function()
 		return game:GetObjects("rbxasset://camera.rbxmx")[1]
 	end)
@@ -335,7 +335,7 @@ if placeId and url then
 		local starterScripts = starterPlayer:FindFirstChild("StarterPlayerScripts") or starterPlayer:FindFirstChild("StarterCharacterScripts")
 
 		if not starterScripts then
-			print("[Loader] StarterPlayerScripts not found, creating")
+			--print("[Loader] StarterPlayerScripts not found, creating")
 			starterScripts = Instance.new("Folder")
 			starterScripts.Name = "StarterPlayerScripts"
 			starterScripts.Parent = starterPlayer
@@ -345,7 +345,7 @@ if placeId and url then
 			if child:IsA("LocalScript") or child:IsA("Script") or child:IsA("ModuleScript") or child:IsA("Folder") then
 				child.Parent = starterScripts
 			else
-				print("[Loader] skipped", child.Name, "because it is", child.ClassName)
+				--print("[Loader] skipped", child.Name, "because it is", child.ClassName)
 			end
 		end
 
@@ -388,4 +388,4 @@ delay(60, function()
 	end
 end)
 
-print("[info] gameserver.txt end")
+--print("[info] gameserver.txt end")

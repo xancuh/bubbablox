@@ -1,9 +1,15 @@
+using System;
+using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Roblox.Libraries.Assets;
-using Roblox.Libraries.RemoteView;
 using Roblox.Models.Assets;
 using Roblox.Models.Users;
+using Roblox.Libraries.Assets;
+using Roblox.Libraries.RemoteView;
 
 #pragma warning disable CS8620
 
@@ -46,32 +52,91 @@ public class WebController2021 : ControllerBase
     {
         
     }
-    
-    private async Task<IActionResult> GetPage(string viewName, IEnumerable<dynamic>? arguments = null)
-    {
-        var newArgs = new List<dynamic>();
-        var v = new ViewUserInfo()
-        {
-            userId = userSession.userId,
-            username = userSession.username,
-            created = userSession.created,
-            isAdmin = false, // obsolete
-            isModerator = false, // obsolete
-            sessionKey = userSession.sessionKey,
-            status = userSession.accountStatus,
-            theme = ThemeTypes.Light.ToString(),
-        };
-        newArgs.Add(v);
-        if (arguments != null)
-        {
-            foreach (var item in arguments)
-            {
-                newArgs.Add(item);
-            }
-        }
-        var result = await RemoteView.GetView(viewName, newArgs);
-        return Content(result, "text/html");
-    }
+	
+	// VERY ugly hack but fuck that stupid fuckig remote view it made me wanna kms, this takes a bit longer but most people go to the url from the home which works anyway
+	private async Task<IActionResult> GetPage(string viewName, IEnumerable<dynamic>? arguments = null)
+	{
+		try
+		{
+			using var httpClient = new HttpClient(new HttpClientHandler()
+			{
+				AllowAutoRedirect = false,
+				UseCookies = false,
+				ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+			})
+			{
+				Timeout = TimeSpan.FromSeconds(30)
+			};
+			
+			// should this be configurable?
+			var frontend = $"http://localhost:3000{HttpContext.Request.Path}{HttpContext.Request.QueryString}";
+
+			var request = new HttpRequestMessage (
+				new HttpMethod(HttpContext.Request.Method),
+				frontend);
+
+			foreach (var header in HttpContext.Request.Headers)
+			{
+				if (!request.Headers.TryAddWithoutValidation(header.Key, header.Value.ToString()))
+				{
+					request.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToString());
+				}
+			}
+
+			// remove bad and ugly headers
+			var stupidanduglyrequestheaders = new[] { "Connection", "Keep-Alive", "Host" };
+			foreach (var header in stupidanduglyrequestheaders)
+			{
+				request.Headers.Remove(header);
+			}
+
+			if (HttpContext.Request.ContentLength > 0)
+			{
+				request.Content = new StreamContent(HttpContext.Request.Body);
+				request.Content.Headers.ContentType = new MediaTypeHeaderValue(HttpContext.Request.ContentType);
+			}
+			
+			HttpResponseMessage response;
+			try
+			{
+				response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"request failed, exception: {ex}");
+				return StatusCode(500, "InternalServerError");
+			}
+
+			HttpContext.Response.StatusCode = (int)response.StatusCode;
+
+			var stupidanduglyresponseheaders = new[] { "Transfer-Encoding", "Connection" };
+			foreach (var header in response.Headers)
+			{
+				if (!stupidanduglyresponseheaders.Contains(header.Key))
+				{
+					HttpContext.Response.Headers[header.Key] = header.Value.ToArray();
+				}
+			}
+
+			foreach (var header in response.Content.Headers)
+			{
+				if (!stupidanduglyresponseheaders.Contains(header.Key))
+				{
+					HttpContext.Response.Headers[header.Key] = header.Value.ToArray();
+				}
+			}
+			
+			// hooray it worked
+			await response.Content.CopyToAsync(HttpContext.Response.Body);
+
+			return new EmptyResult();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"proxy failed and it sucks: {ex}");
+			return StatusCode(500, $"InternalServerError");
+		}
+	}
     
     public static dynamic ToDynamic<T>(T obj)
     {

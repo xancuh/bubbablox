@@ -4,6 +4,8 @@ using System.Text.Json;
 
 namespace Roblox.Libraries.RemoteView;
 
+// fuck this stupid thing. why was this implemented by floatzel??????? there's no api anywhere for it
+
 public static class RemoteView
 {
     private static HttpClient client { get; } = new();
@@ -22,7 +24,7 @@ public static class RemoteView
         var c = new StringContent(serialized);
         c.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         c.Headers.Add("rblx-authorization", authorization);
-        var result = await client.PostAsync(baseUrl + "/api/get-view?view=" + viewName, c);
+        var result = await client.PostAsync("http://localhost:3000" + viewName, c);
         if (!result.IsSuccessStatusCode)
         {
             throw new Exception("Request failed with statusCode=" + result.StatusCode);
