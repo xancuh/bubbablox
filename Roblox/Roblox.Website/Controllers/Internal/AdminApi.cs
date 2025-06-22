@@ -1317,7 +1317,55 @@ public class AdminApiController : ControllerBase
         result.year = year.ToString();
         return result;
     }
+	
+	// HASHED. not real ips.
+	[HttpGet("users/alts"), StaffFilter(Access.GetUsersList)]
+	public async Task<dynamic> GetPossibleAlts()
+	{
+		var duplicate = await db.QueryAsync<dynamic>(
+			@"SELECT hashed_ip, COUNT(*) as count 
+			  FROM user_hashed_ips 
+			  GROUP BY hashed_ip 
+			  HAVING COUNT(*) > 1");
+		
+		if (!duplicate.Any())
+		{
+			return new { message = "Nothing found." };
+		}
 
+		var containers = new Dictionary<int, dynamic>();
+		int containernum = 1;
+
+		foreach (var ip in duplicate)
+		{
+			var possiblealts = await db.QueryAsync<dynamic>(
+				@"SELECT u.id as user_id, u.username, uhi.hashed_ip, uhi.last_seen 
+				  FROM user_hashed_ips uhi
+				  JOIN ""user"" u ON uhi.user_id = u.id
+				  WHERE uhi.hashed_ip = @hashed_ip
+				  ORDER BY uhi.last_seen DESC",
+				new { hashed_ip = ip.hashed_ip });
+			
+			var users = possiblealts.ToList();
+			for (int i = 0; i < users.Count; i++)
+			{
+				for (int j = i + 1; j < users.Count; j++)
+				{
+					containers.Add(containernum, new
+					{
+						users = new List<dynamic> { users[i], users[j] }
+					});
+					containernum++;
+				}
+			}
+		}
+
+		return new
+		{
+			data = containers
+		};
+	}
+	
     private bool IsAdmin()
     {
         return StaffFilter.IsOwner(userSession.userId);
@@ -1350,58 +1398,63 @@ public class AdminApiController : ControllerBase
         await db.ExecuteAsync("DELETE FROM user_ban WHERE user_id = :id", new { id = request.userId });
     }
     
-    [HttpPost("ban"), StaffFilter(Access.BanUser)]
-    public async Task BanUser([Required, FromBody] BanUserRequest request)
-    {
-        DateTime? expirationDate = string.IsNullOrWhiteSpace(request.expires) ? null : DateTime.Parse(request.expires);
-        var doesExpire = expirationDate != null;
-        
-        var info = await services.users.GetUserById(request.userId);
-        if (info.accountStatus != AccountStatus.Ok && info.accountStatus != AccountStatus.Suppressed && info.accountStatus != AccountStatus.MustValidateEmail)
-            throw new StaffException("You cannot ban this user. Current status is " + info.accountStatus);
-        if (await IsStaff(request.userId) && !StaffFilter.IsOwner(userSession.userId))
-            throw new StaffException("You cannot ban this user.");
-        // insert ban
-        await db.ExecuteAsync(
-            "INSERT INTO user_ban (user_id, reason, author_user_id, expired_at, internal_reason) VALUES (:user_id, :reason, :author, :expires, :internal_reason)", new
-            {
-                internal_reason = request.internalReason,
-                user_id = request.userId,
-                request.reason,
-                author = userSession.userId,
-                expires = expirationDate,
-            });
-        // insert into user ban history
-        await db.ExecuteAsync(
-            "INSERT INTO moderation_user_ban (user_id, reason, author_user_id, expired_at, internal_reason) VALUES (:user_id, :reason, :author, :expires, :internal_reason)", new
-            {
-                internal_reason = request.internalReason,
-                user_id = request.userId,
-                request.reason,
-                author = userSession.userId,
-                expires = expirationDate,
-            });
-        // log
-        await db.ExecuteAsync("INSERT INTO moderation_ban (user_id, actor_id, reason, internal_reason, expired_at) VALUES (:user_id, :author, :reason, :internal_reason, :expires)", new
-        {
-            user_id = request.userId,
-            author = userSession.userId,
-            reason = request.reason,
-            internal_reason = request.internalReason,
-            expires = expirationDate,
-        });
-        // mark as banned
-        await db.ExecuteAsync("UPDATE \"user\" SET status = :st WHERE id = :id", new
-        {
-            st =  doesExpire ? AccountStatus.Suppressed : AccountStatus.Deleted,
-            id = request.userId,
-        });
-        // take all limited items off sale
-        await db.ExecuteAsync("UPDATE user_asset SET price = 0 WHERE price != 0 AND user_id = :user_id", new
-        {
-            user_id = request.userId,
-        });
-    }
+	[HttpPost("ban"), StaffFilter(Access.BanUser)]
+	public async Task BanUser([Required, FromBody] BanUserRequest request)
+	{
+		DateTime? expirationDate = string.IsNullOrWhiteSpace(request.expires) ? null : DateTime.Parse(request.expires);
+		var doesExpire = expirationDate != null;
+		
+		var info = await services.users.GetUserById(request.userId);
+		if (info.accountStatus != AccountStatus.Ok && info.accountStatus != AccountStatus.Suppressed && info.accountStatus != AccountStatus.MustValidateEmail)
+			throw new StaffException("You cannot ban this user. Current status is " + info.accountStatus);
+		if (await IsStaff(request.userId) && !StaffFilter.IsOwner(userSession.userId))
+			throw new StaffException("You cannot ban this user.");
+		// insert ban
+		await db.ExecuteAsync(
+			"INSERT INTO user_ban (user_id, reason, author_user_id, expired_at, internal_reason) VALUES (:user_id, :reason, :author, :expires, :internal_reason)", new
+			{
+				internal_reason = request.internalReason,
+				user_id = request.userId,
+				request.reason,
+				author = userSession.userId,
+				expires = expirationDate,
+			});
+		// insert into user ban history
+		await db.ExecuteAsync(
+			"INSERT INTO moderation_user_ban (user_id, reason, author_user_id, expired_at, internal_reason) VALUES (:user_id, :reason, :author, :expires, :internal_reason)", new
+			{
+				internal_reason = request.internalReason,
+				user_id = request.userId,
+				request.reason,
+				author = userSession.userId,
+				expires = expirationDate,
+			});
+		// log
+		await db.ExecuteAsync("INSERT INTO moderation_ban (user_id, actor_id, reason, internal_reason, expired_at) VALUES (:user_id, :author, :reason, :internal_reason, :expires)", new
+		{
+			user_id = request.userId,
+			author = userSession.userId,
+			reason = request.reason,
+			internal_reason = request.internalReason,
+			expires = expirationDate,
+		});
+		// mark as banned
+		await db.ExecuteAsync("UPDATE \"user\" SET status = :st WHERE id = :id", new
+		{
+			st =  doesExpire ? AccountStatus.Suppressed : AccountStatus.Deleted,
+			id = request.userId,
+		});
+		// take all limited items off sale
+		await db.ExecuteAsync("UPDATE user_asset SET price = 0 WHERE price != 0 AND user_id = :user_id", new
+		{
+			user_id = request.userId,
+		});
+		// delete hashed IPs
+		await db.ExecuteAsync("DELETE FROM user_hashed_ips WHERE user_id = :user_id", new
+		{
+			user_id = request.userId,
+		});
+	}
 
     [HttpPost("user/create-message"), StaffFilter(Access.CreateMessage)]
     public async Task CreateMessage([Required, FromBody] CreateMessageRequest request)

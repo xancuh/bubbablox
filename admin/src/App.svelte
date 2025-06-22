@@ -47,6 +47,7 @@ import Permissions from "./pages/Permissions.svelte";
 import ForceApplication from "./pages/ForceApplication.svelte";
 import UpdateThumbnail from "./pages/UpdateThumbnail.svelte";
 import CopyUGC from "./pages/CopyUGC.svelte";
+import PossibleAlts from "./pages/PossibleAlts.svelte";
 	// import 'bootstrap';
 
 	var pushState = history.pushState;
@@ -105,6 +106,9 @@ import CopyUGC from "./pages/CopyUGC.svelte";
 		</Route>
 		<Route path="/admin/logs">
 			<Logs />
+		</Route>
+		<Route path="/admin/alts">
+			<PossibleAlts />
 		</Route>
 		<Route path="/admin/user/create">
 			<CreatePlayer />

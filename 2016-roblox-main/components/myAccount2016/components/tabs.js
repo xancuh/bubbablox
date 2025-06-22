@@ -11,9 +11,7 @@ const Tabs = props => {
     options={[
       'Account Info',
       'Security',
-      'Social',
       'Privacy',
-      'Billing',
     ]}></Tabs2016>
 }
 

@@ -375,7 +375,38 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
 </script>	
 
 <script>
-    function getparam(name, url) {
+	(function() {
+		// this sucks but it works
+		if (!window.location.search.includes('?loginmsg')) return;
+
+		const stupidforgotpassword = () => {
+			const el = document.getElementById('HeaderForgotPassword');
+			if (el) {
+				el.style.display = 'none';
+				el.remove();
+			}
+		};
+
+		new MutationObserver(stupidforgotpassword).observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+		
+		Object.defineProperty(document, 'createElement', {
+			value: function(original) {
+				return function(tagName, options) {
+					const el = original.call(this, tagName, options);
+					if (el.id === 'HeaderForgotPassword') {
+						el.style.display = 'none';
+					}
+					return el;
+				};
+			}(document.createElement),
+			writable: false
+		});
+	})();
+	
+    function getParam(name, url) {
         if (!url) url = window.location.href;
         name = name.replace(/[\[\]]/g, '\\$&');
         var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
@@ -386,9 +417,15 @@ if (window.location.pathname === "/" && document.cookie.includes('.ROBLOSECURITY
     }
 
     $(document).ready(function() {
-        var signupMsg = getparam('signupmsg');
+        var loginMsg = getParam('loginmsg');
+        if (loginMsg && loginMsg.trim() !== '') {
+            $('#login-error-message').text(loginMsg).show();
+            $('#HeaderForgotPassword').hide();
+        }
+        
+        var signupMsg = getParam('signupmsg');
         if (signupMsg && signupMsg.trim() !== '') {
-            $('#signuperror-message').text(signupMsg).show();
+            $('#si gnuperror-message').text(signupMsg).show();
             $('#discordmsg').hide();
         }
     });

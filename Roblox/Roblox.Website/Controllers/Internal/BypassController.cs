@@ -1859,26 +1859,6 @@ namespace Roblox.Website.Controllers
 			}
 			
 			services.gameServer.ShutDownServer(request.serverId);
-			
-			try 
-			{
-				var wh = Roblox.Configuration.Webhook;
-				if (!string.IsNullOrEmpty(wh))
-				{
-					var message = $"server {request.serverId} shut down";
-					
-					using (var httpClient = new HttpClient())
-					{
-						var payload = new { content = message };
-						var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-						await httpClient.PostAsync(wh, content);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"error sending shutdown notification to Discord: {ex.Message}");
-			}
 		}
 
 		[HttpPostBypass("/gs/players/report")]

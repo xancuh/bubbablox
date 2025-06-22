@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Security.Cryptography;
+using System.Text;
 using JWT;
 using JWT.Algorithms;
 using JWT.Exceptions;
@@ -14,6 +16,7 @@ using Roblox.Services.Exceptions;
 using Roblox.Website.Controllers;
 using Roblox.Website.Filters;
 using Roblox.Website.Lib;
+using Roblox.Libraries.Password;
 using ServiceProvider = Roblox.Services.ServiceProvider;
 
 namespace Roblox.Website.Middleware;
@@ -90,6 +93,17 @@ public class SessionMiddleware
         ctx.Response.Cookies.Delete(CookieName);
         await _next(ctx);
     }
+	
+	// is there a better way to do this? cause argon makes a random salt and i can't do anything about that
+	private static string HashIp(string IP)
+	{
+		string salt = Roblox.Configuration.IPSalt;
+		
+		using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(salt));
+		byte[] hashbytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(IP));
+		
+		return BitConverter.ToString(hashbytes).Replace("-", "").ToLower();
+	}
 
 	public async Task InvokeAsync(HttpContext ctx)
 	{
@@ -120,6 +134,10 @@ public class SessionMiddleware
 						{
 							var sessResult = await users.GetSessionById(decodedResult.sessionId);
 							userInfo = await users.GetUserById(sessResult.userId);
+													
+							var IP = ControllerBase.GetRequesterIpRaw(ctx);
+							var IPHash = HashIp(IP);
+							await users.UpdateUserHashedIp(userInfo.userId, IPHash);
 						}
 						catch (RecordNotFoundException)
 						{

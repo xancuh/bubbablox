@@ -57,6 +57,12 @@
 					icon: BookIcon,
 					permission: 'LockForumThread',
 				},
+				{
+					name: 'Possible Alts',
+					link: '/admin/alts',
+					icon: UsersIcon,
+					permission: 'GetUsersList',
+				},
 			]
 		},
 		{

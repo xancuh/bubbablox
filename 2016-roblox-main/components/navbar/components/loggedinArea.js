@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createUseStyles } from "react-jss";
+import { useRouter } from 'next/router';
 import getFlag from "../../../lib/getFlag";
 import { abbreviateNumber } from "../../../lib/numberUtils";
 import { logout } from "../../../services/auth";
@@ -32,24 +33,31 @@ const useDropdownStyles = createUseStyles({
 
 const SettingsDropdown = props => {
   const authStore = AuthenticationStore.useContainer();
+  const router = useRouter();
   const s = useDropdownStyles();
-  return <div className={s.wrapper}>
-    <p className={`${s.text}`}>
-      <Link href='/My/Account'><a className='text-dark'>Settings</a></Link>
-    </p>
-    <p className={`${s.text}`}>
-      <Link href='/help'><a className='text-dark'>Help</a></Link>
-    </p>
-    <p className={`${s.text}`}>
-      <a onClick={(e) => {
-        e.preventDefault();
-        logout().then(() => {
-          window.location.reload();
-        })
-      }} className='text-dark'>Logout</a>
-    </p>
-  </div>
-}
+  
+  const handlelog = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      window.location.href = '/'; 
+    } catch (err) {
+      console.error('logout err:', err);
+      router.push('/');
+    }
+  };
+
+  return (
+    <div className={s.wrapper}>
+      <p className={s.text}>
+        <Link href='/My/Account'><a className='text-dark'>Settings</a></Link>
+      </p>
+      <p className={s.text}>
+        <a onClick={handlelog} className='text-dark'>Logout</a>
+      </p>
+    </div>
+  );
+};
 
 
 const useLoginAreaStyles = createUseStyles({

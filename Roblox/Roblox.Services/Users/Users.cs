@@ -420,6 +420,18 @@ public class UsersService : ServiceBase, IService
 			new { discordId });
 	}
 	
+	public async Task UpdateUserHashedIp(long userId, string hashedIp)
+	{
+		await db.ExecuteAsync(
+			"INSERT INTO user_hashed_ips (user_id, hashed_ip, last_seen) VALUES (:user_id, :hashed_ip, NOW()) " +
+			"ON CONFLICT (user_id) DO UPDATE SET hashed_ip = :hashed_ip, last_seen = NOW()",
+			new
+			{
+				user_id = userId,
+				hashed_ip = hashedIp
+			});
+	}
+	
 public async Task ChangePassword(long userId, string newPassword)
 {
     // Debugging: Log method entry with parameters (redacting password for security)

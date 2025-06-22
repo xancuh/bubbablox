@@ -164,23 +164,36 @@ local function processModCommand(sender, message)
 			}
 		end
 	end
+	if string.lower(message) == ":shutdown" then
+		local shutdownMsg = string.format("**%s** (ID: %d) shut down the server", 
+			sender.Name, sender.UserId)
+		sendtohook(shutdownMsg)
+
+		for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+			player:Kick("Server was shut down by an administrator")
+		end
+		
+		shutdown()
+		return
+	end
 	if string.sub(message, 1, 7) == ":unban " then
-		local userToBan = string.sub(string.lower(message), 8)
+		local userToUnban = string.sub(string.lower(message), 8)
 		local userId = nil
+
 		for id, data in pairs(bannedIds) do
-			local name = string.sub(string.lower(data.Name), 1, string.len(userToBan))
-			if name == userToBan then
+			local name = string.lower(data.Name)
+			if string.find(name, userToUnban, 1, true) then
 				userId = id
 				break
 			end
 		end
-		print("unban", userId)
+		
 		if userId ~= nil then
 			local unbanmsg = string.format("**%s** (ID: %d) unbanned **%s** (ID: %d)", 
 				sender.Name, sender.UserId, bannedIds[userId].Name, userId)
 			sendtohook(unbanmsg)
 			
-			table.remove(bannedIds, userId)
+			bannedIds[userId] = nil
 		end
 	end
 end

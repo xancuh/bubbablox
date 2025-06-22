@@ -31,6 +31,7 @@ public static class Configuration
 	public static string DiscordForgotPasswordRedirect { get; set; }
 	public static string DiscordLoginRedirect { get; set; }	
 	public static string DiscordKey { get; set; }
+	public static string IPSalt { get; set; }
     public static string HCaptchaPublicKey { get; set; }
     public static string HCaptchaPrivateKey { get; set; }
     public static IEnumerable<GameServerConfigEntry> GameServerIpAddresses { get; set; }

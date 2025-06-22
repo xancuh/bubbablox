@@ -14,14 +14,13 @@
 			name: 'Bad Username',
 			text: 'Your username is inappropriate for Roblox.',
 		},
-		// fuck this shit, bad username is enough already, and you can type your own reason.
-		//{
-		//	name: 'Bad Username (Privacy Issue)',
-		//	text: 'Your username is not appropriate for Roblox due to privacy concerns. ',
-		//},
 		{
 			name: 'Spam',
 			text: 'Do not repeatedly post spam chat or content in Roblox.',
+		},
+		{
+			name: 'Alternate Account',
+			text: 'Your account has been moderated because our staff team suspects you are alting. Please make a ticket in the #support channel on the Discord.',
 		},
 		{
 			name: 'Inappropriate Behaviour',

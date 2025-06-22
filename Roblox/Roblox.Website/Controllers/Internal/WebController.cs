@@ -456,17 +456,24 @@ public class WebController : ControllerBase
 	public async Task<string> GetJoinScript(long placeId)
 	{
 		FeatureFlags.FeatureCheck(FeatureFlag.GameJoinEnabled);
-		
+
 		var placeInfo = await services.assets.GetAssetCatalogInfo(placeId);
-		if (placeInfo.assetType != Models.Assets.Type.Place) throw new BadRequestException();
-		
+		if (placeInfo.assetType != Models.Assets.Type.Place)
+			throw new BadRequestException();
+
 		var modInfo = (await services.assets.MultiGetAssetDeveloperDetails(new[] { placeId })).First();
-		if (modInfo.moderationStatus != ModerationStatus.ReviewApproved) throw new BadRequestException();
+		if (modInfo.moderationStatus != ModerationStatus.ReviewApproved)
+			throw new BadRequestException();
+
+		var rbxl = Path.Combine(Configuration.RccServicePath, "content", $"{placeId}.rbxl");
+
+		if (!System.IO.File.Exists(rbxl))
+			throw new BadRequestException(400, "There is no place uploaded to this game.");
 
 		string baselink = Roblox.Configuration.BaseUrl;
 		string auth = $"{baselink}/Login/Negotiate.ashx";
 		string ticket = Request.Cookies[".ROBLOSECURITY"];
-		
+
 		string args = $"-a \"{auth}\" -j \"{baselink}/game/PlaceLauncher.ashx?placeid={placeId}&ticket={ticket}\" -t \"{ticket}\"";
 
 		return args;

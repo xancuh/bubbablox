@@ -210,6 +210,38 @@ public class TradesControllerV1 : ControllerBase
             throw new RobloxException(400, 0, e.Message);
         }
     }
+	
+	[HttpPost("trades/{tradeId:long}/counter")]
+	public async Task CounterTrade(long tradeId, [Required, FromBody] CreateTradeRequest request)
+	{
+		try
+		{
+			FeatureCheck();
+			
+			var existing = await services.trades.GetTradeById(tradeId);
+			if (existing.userIdOne != safeUserSession.userId && existing.userIdTwo != safeUserSession.userId)
+				throw new BadRequestException(2, "The trade cannot be found or you are not authorized to counter it");
+			
+			long otherUserId = existing.userIdOne == safeUserSession.userId 
+				? existing.userIdTwo 
+				: existing.userIdOne;
+			
+			await services.trades.DeclineTrade(tradeId, safeUserSession.userId);
+
+			var offers = request.offers.Select(offer => new CreateTradeOffer
+			{
+				userId = offer.userId,
+				userAssetIds = offer.userAssetIds,
+				robux = offer.robux
+			});
+			
+			await services.trades.SendTrade(safeUserSession.userId, offers, true);
+		}
+		catch (Exception e)
+		{
+			throw new RobloxException(400, 0, e.Message);
+		}
+	}
 
     [HttpPost("trades/send")]
     public async Task SendTrade([Required, FromBody] CreateTradeRequest request)
