@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { link } from "svelte-routing";
-	import { HomeIcon, CopyIcon, UsersIcon, GiftIcon, ImageIcon, DollarSignIcon, BookOpenIcon, EyeIcon, PlusCircleIcon, EditIcon, FilePlusIcon, RefreshCcwIcon, UploadCloudIcon, CheckSquareIcon, TagIcon, SunriseIcon, FlagIcon, StarIcon, BookIcon, PhoneIcon, ActivityIcon, TabletIcon, ChevronDownIcon, ChevronRightIcon } from "svelte-feather-icons";
+	import { HomeIcon, CopyIcon, UsersIcon, UserIcon, UserPlusIcon, GiftIcon, ImageIcon, DollarSignIcon, BookOpenIcon, EyeIcon, PlusCircleIcon, EditIcon, FilePlusIcon, RefreshCcwIcon, UploadCloudIcon, CheckSquareIcon, TagIcon, SunriseIcon, FlagIcon, StarIcon, BookIcon, PhoneIcon, ActivityIcon, TabletIcon, ChevronDownIcon, ChevronRightIcon } from "svelte-feather-icons";
 
 	import SavedPages, { addPage } from "../../stores/saved-pages";
 	import PageEntry from "../saved-pages/PageEntry.svelte";
@@ -48,7 +48,7 @@
 				{
 					name: "Create Player",
 					link: "/admin/user/create",
-					icon: UsersIcon,
+					icon: UserPlusIcon,
 					permission: "CreateUser",
 				},
 				{
@@ -56,12 +56,6 @@
 					link: '/admin/forums',
 					icon: BookIcon,
 					permission: 'LockForumThread',
-				},
-				{
-					name: 'Possible Alts',
-					link: '/admin/alts',
-					icon: UsersIcon,
-					permission: 'GetUsersList',
 				},
 			]
 		},
@@ -87,6 +81,12 @@
 					link: '/admin/reports',
 					icon: StarIcon,
 					permission: 'ManageReports',
+				},
+				{
+					name: 'Possible Alts',
+					link: '/admin/alts',
+					icon: UserIcon,
+					permission: 'GetUsersList',
 				},
 			]
 		},
@@ -120,12 +120,6 @@
 			name: "ASSETS",
 			// icon: GiftIcon,
 			items: [
-				{
-					name: "Open Gift",
-					link: "/admin/gift/open",
-					icon: GiftIcon,
-					permission: "GiveUserItem",
-				},
 				{
 					name: "Update Asset Thumbnail",
 					link: "/admin/asset/thumbnail",
@@ -245,7 +239,7 @@
 					{/if}
 				{/each}
 				
-				{#if rank.hasPermission("CreateAsset") || rank.hasPermission("SetAssetProduct") || rank.hasPermission("MigrateAssetFromRoblox") || rank.hasPermission("CreateAssetVersion") || rank.hasPermission("RequestAssetReRender") || rank.hasPermission('CreateBundleCopiedFromRoblox') || rank.hasPermission('CreateAssetCopiedFromRoblox')}
+				{#if rank.hasPermission("CreateAsset") || rank.hasPermission("SetAssetProduct") || rank.hasPermission("MigrateAssetFromRoblox") || rank.hasPermission("CreateAssetVersion") || rank.hasPermission("RequestAssetReRender") || rank.hasPermission('CreateBundleCopiedFromRoblox') || rank.hasPermission('CreateAssetCopiedFromRoblox') || rank.hasPermission("GiveUserItem")}
 					<li class="nav-item">
 						<a 
 							class="nav-link d-flex justify-content-between align-items-center" 
@@ -285,6 +279,11 @@
 								{#if rank.hasPermission("SetAssetProduct")}
 									<li class="nav-item">
 										<a use:link class="nav-link" href="/admin/asset/rap"><DollarSignIcon /> Set Item RAP</a>
+									</li>
+								{/if}
+								{#if rank.hasPermission("GiveUserItem")}
+									<li class="nav-item">
+										<a use:link class="nav-link" href="/admin/gift/open"><GiftIcon /> Open Gift</a>
 									</li>
 								{/if}
 							</ul>

@@ -1330,7 +1330,7 @@ public class AdminApiController : ControllerBase
 		
 		if (!duplicate.Any())
 		{
-			return new { message = "Nothing found." };
+			return new {};
 		}
 
 		var containers = new Dictionary<int, dynamic>();
@@ -1339,7 +1339,7 @@ public class AdminApiController : ControllerBase
 		foreach (var ip in duplicate)
 		{
 			var possiblealts = await db.QueryAsync<dynamic>(
-				@"SELECT u.id as user_id, u.username, uhi.hashed_ip, uhi.last_seen 
+				@"SELECT u.id as user_id, u.username, u.status, uhi.hashed_ip, uhi.last_seen 
 				  FROM user_hashed_ips uhi
 				  JOIN ""user"" u ON uhi.user_id = u.id
 				  WHERE uhi.hashed_ip = @hashed_ip
@@ -1351,13 +1351,21 @@ public class AdminApiController : ControllerBase
 			{
 				for (int j = i + 1; j < users.Count; j++)
 				{
-					containers.Add(containernum, new
+					if (users[i].status == 1 || users[j].status == 1)
 					{
-						users = new List<dynamic> { users[i], users[j] }
-					});
-					containernum++;
+						containers.Add(containernum, new
+						{
+							users = new List<dynamic> { users[i], users[j] }
+						});
+						containernum++;
+					}
 				}
 			}
+		}
+		
+		if (containers.Count == 0)
+		{
+			return new {};
 		}
 
 		return new
@@ -1365,7 +1373,7 @@ public class AdminApiController : ControllerBase
 			data = containers
 		};
 	}
-	
+
     private bool IsAdmin()
     {
         return StaffFilter.IsOwner(userSession.userId);
@@ -1446,11 +1454,6 @@ public class AdminApiController : ControllerBase
 		});
 		// take all limited items off sale
 		await db.ExecuteAsync("UPDATE user_asset SET price = 0 WHERE price != 0 AND user_id = :user_id", new
-		{
-			user_id = request.userId,
-		});
-		// delete hashed IPs
-		await db.ExecuteAsync("DELETE FROM user_hashed_ips WHERE user_id = :user_id", new
 		{
 			user_id = request.userId,
 		});

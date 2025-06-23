@@ -12,7 +12,7 @@
 	let numPendingAssets: number|undefined;
 	let numPendingText: number|undefined;
 	let numPendingReports: number|undefined;
-	let totalAssets: number | undefined;
+	let totalAlts: number | undefined;
 
 	Promise.all([
 		request.get(`/groups/pending-icons`),
@@ -58,9 +58,28 @@
 			usersJoinedTotal = data.data.total;
 		});
 	}
-	if (rank.hasPermission("TrackItem")) {
-        request.get<{ total: number }>("/assets/total").then((data) => {
-            totalAssets = data.data.total;
+    if (rank.hasPermission("GetUsersList")) {
+        request.get("/users/alts").then((response) => { 
+            if (!response.data || !response.data.data) {
+                console.error("[error] bad alt structure");
+                totalAlts = 0;
+                return;
+            }
+
+            const altdata = response.data.data;
+
+            let count = 0;
+            for (const group in altdata) {
+                if (altdata[group]?.users?.length > 1) {
+                    count++;
+                }
+            }
+            
+            console.log("[info] alt groups:", count);
+            totalAlts = count;
+        }).catch(error => {
+            console.error("[error] error getting alts:", error);
+            totalAlts = 0;
         });
     }
 	import * as rank from "../stores/rank";
@@ -120,12 +139,15 @@ import { now } from 'svelte/internal';
 				cardClasses="bg-secondary bg-gradient" 
 			/>
 		</Permission>
-			<Permission p="TrackItem">
-				<DashStatCard 
-					key={totalAssets?.toString() || "-"} 
-					value="Total Assets" 
-					cardClasses="bg-info bg-gradient" 
-				/>
+		<Permission p="GetUsersList">
+			<DashStatCard 
+				onClick={() => {
+					navigate('/admin/alts');
+				}}
+				key={((typeof totalAlts === "number" && totalAlts.toLocaleString()) || "-")} 
+				value="Num Possible Alts" 
+				cardClasses="bg-info bg-gradient pointer" 
+			/>
 		</Permission>
 	</div>
 
