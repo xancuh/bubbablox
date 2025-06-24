@@ -66,7 +66,4 @@
 	p.err {
 		color: red;
 	}
-	input#new-url {
-		cursor: pointer;
-	}
 </style>

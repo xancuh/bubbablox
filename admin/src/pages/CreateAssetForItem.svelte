@@ -5,11 +5,12 @@
 	let disabled = false;
 	let errorMessage: string | undefined;
 	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to do this.";
-		}
-	});
+    rank.promise.then(() => {
+        if (!rank.hasPermission("CreateAsset")) {
+            errorMessage = "You don't have permission to create assets.";
+            disabled = true;
+        }
+    });
 	let newUrl: string = '';
 	let newId: string = '';
 </script>

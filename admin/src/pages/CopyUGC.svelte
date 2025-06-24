@@ -12,7 +12,7 @@
 
     rank.promise.then(() => {
         if (!rank.hasPermission("MigrateAssetFromRoblox")) {
-            errmsg = "You don't have permission to migrate assets";
+            errmsg = "You don't have permission to copy assets.";
             disabled = true;
         }
     });
@@ -58,13 +58,13 @@
 </script>
 
 <svelte:head>
-    <title>Copy ROBLOX UGC</title>
+    <title>Copy Roblox UGC</title>
 </svelte:head>
 
 <Main>
     <div class="row">
         <div class="col-12">
-            <h1>Copy ROBLOX UGC</h1>
+            <h1>Copy Roblox UGC</h1>
             {#if errmsg}
                 <div class="alert alert-danger">{errmsg}</div>
             {/if}
@@ -84,7 +84,6 @@
                         class="form-control" 
                         id="roblox-url" 
                         bind:value={rbxURL}
-                        placeholder="https://www.roblox.com/catalog/123456789/Asset"
                         required
                         disabled={disabled || loading}
                     />
@@ -124,9 +123,5 @@
 <style>
     .alert {
         margin-bottom: 1rem;
-    }
-    .form-text {
-        font-size: 0.85rem;
-        color: #6c757d;
     }
 </style>

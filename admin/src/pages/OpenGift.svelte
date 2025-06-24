@@ -114,8 +114,4 @@
     .alert {
         margin-bottom: 1rem;
     }
-    .form-text {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
 </style>

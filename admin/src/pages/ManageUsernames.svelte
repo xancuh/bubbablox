@@ -15,13 +15,13 @@
 	export let userId: string;
 
 	let errorMessage: string | undefined;
-
 	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to perform this action.";
-		}
-	});
+    rank.promise.then(() => {
+        if (!rank.hasPermission("CreateAsset")) {
+            errorMessage = "You don't have permission to create assets.";
+            disabled = true;
+        }
+    });
 </script>
 
 <style>

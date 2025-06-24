@@ -5,12 +5,6 @@
 	export let userId: string;
 	let disabled = false;
 	let errorMessage: string | undefined;
-	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to manage inventories.";
-		}
-	});
 	let assetIdsToGive: { assetId: number; giveSerial: boolean; copies: number }[] = [];
 	let userAssetsToRemove: { assetId: number; userAssetId: number; name: string }[] = [];
 	let listOpen = false;
@@ -20,6 +14,13 @@
 	request.get("/user-collectibles?userId=" + userId).then((userassets) => {
 		ownedUserAssets = userassets.data;
 	});
+	import * as rank from "../stores/rank";
+    rank.promise.then(() => {
+        if (!rank.hasPermission("GetUserDetailed")) {
+            errorMessage = "You don't have permission to view this user's inventory.";
+            disabled = true;
+        }
+    });
 </script>
 
 <style>

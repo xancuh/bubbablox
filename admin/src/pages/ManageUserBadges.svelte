@@ -13,6 +13,13 @@
 				disabled = false;
 			});
 	}
+	import * as rank from "../stores/rank";
+    rank.promise.then(() => {
+        if (!rank.hasPermission("GiveUserBadges")) {
+            errorMessage = "You don't have permission to manage badges.";
+            disabled = true;
+        }
+    });
 	export let userId: string;
 
 	const tableOfBadgeIconName: Record<string, string> = {
@@ -47,13 +54,6 @@
 	let errorMessage: string | undefined;
 	let badgesToAdd: number[] = [];
 	let badgesToRemove: number[] = [];
-
-	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to manage badges.";
-		}
-	});
 </script>
 
 <style>

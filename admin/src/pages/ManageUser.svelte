@@ -5,6 +5,13 @@
 	import * as rank from "../stores/rank";
 	export let userId: string;
 
+    rank.promise.then(() => {
+        if (!rank.hasPermission("GetUserDetailed")) {
+            errorMessage = "You don't have permission to manage users.";
+            disabled = true;
+        }
+    });
+
 	import Main from "../components/templates/Main.svelte";
 	import request from "../lib/request";
 	import Confirm from "../components/modal/Confirm.svelte";

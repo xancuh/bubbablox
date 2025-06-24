@@ -5,11 +5,12 @@
 	let disabled = false;
 	let errorMessage: string | undefined;
 	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to manage re-renders.";
-		}
-	});
+    rank.promise.then(() => {
+        if (!rank.hasPermission("RequestAssetReRender")) {
+            errorMessage = "You don't have permission to re-render assets.";
+            disabled = true;
+        }
+    });
 </script>
 
 <svelte:head>

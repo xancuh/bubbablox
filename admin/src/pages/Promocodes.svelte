@@ -612,20 +612,10 @@
         white-space: nowrap;
         border: 0;
     }
-	.btn i {
-        margin-right: 0.3rem;
-    }
     .btn-group .btn {
         padding: 0.25rem 0.5rem;
     }
     .btn-group-sm .btn {
         font-size: 0.875rem;
-    }
-	.btn-icon-only {
-        width: 2rem;
-        padding: 0.25rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
     }
 </style>

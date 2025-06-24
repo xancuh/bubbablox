@@ -5,11 +5,12 @@
 	let disabled = false;
 	let errorMessage: string | undefined;
 	import * as rank from "../stores/rank";
-	rank.promise.then(() => {
-		if (!rank.is("admin")) {
-			errorMessage = "You must have the administrator permission to create a player.";
-		}
-	});
+    rank.promise.then(() => {
+        if (!rank.hasPermission("CreateUser")) {
+            errorMessage = "You don't have permission to create users.";
+            disabled = true;
+        }
+    });
 </script>
 
 <svelte:head>
