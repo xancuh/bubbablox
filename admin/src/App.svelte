@@ -48,6 +48,7 @@ import ForceApplication from "./pages/ForceApplication.svelte";
 import UpdateThumbnail from "./pages/UpdateThumbnail.svelte";
 import CopyUGC from "./pages/CopyUGC.svelte";
 import PossibleAlts from "./pages/PossibleAlts.svelte";
+import UploadCustomItem from "./pages/UploadCustomItem.svelte";
 	// import 'bootstrap';
 
 	var pushState = history.pushState;
@@ -148,6 +149,9 @@ import PossibleAlts from "./pages/PossibleAlts.svelte";
 		</Route>
 		<Route path="/admin/asset/create/clothing">
 			<CreateClothing />
+		</Route>
+		<Route path="/admin/asset/create/custom">
+			<UploadCustomItem />
 		</Route>
 		<Route path="/admin/asset/copy">
 			<CopyRobloxClothing />

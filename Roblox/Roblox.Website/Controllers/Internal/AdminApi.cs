@@ -2941,7 +2941,8 @@ Thank you for your understanding,
 			fileData.Position = 0;
 			file = fileData;
 		}
-
+		
+		request.description ??= "No description provided.";
 		var assetDetails = await services.assets.CreateAsset(
 			request.name, 
 			request.description, 
@@ -2999,11 +3000,106 @@ Thank you for your understanding,
             null, null);
         return asset;
     }
-
-	private long GetAssetIDFromURL(string url)
+	
+	// this is for Not a Bad Bubba
+	[HttpPost("asset/create-custom-asset")]
+	[StaffFilter(Access.CreateAsset)]
+	public async Task<IActionResult> UploadCustomAsset([FromForm] UploadCustomAssetReq request)
 	{
-		var match = Regex.Match(url, @"catalog/(\d+)");
-		return match.Success ? long.Parse(match.Groups[1].Value) : 0;
+		string rbxmx = null;
+		string Mesh = null;
+		string OBJ = null;
+		var filestoclean = new List<string>();
+		string CWD = null;
+
+		try
+		{
+			CWD = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+			Directory.CreateDirectory(CWD);
+			Writer.Info(LogGroup.AdminApi, $"made temp folder: {CWD}");
+
+			if (request.OBJ == null || request.OBJ.Length == 0)
+				throw new StaffException("OBJ file is required");
+
+			if (request.RBXM == null || request.RBXM.Length == 0)
+				throw new StaffException("RBXM file is required");
+
+			var rbxm = Path.Combine(CWD, $"{Guid.NewGuid()}.rbxm");
+			await using (var stream = System.IO.File.Create(rbxm))
+			{
+				await request.RBXM.CopyToAsync(stream);
+			}
+			filestoclean.Add(rbxm);
+			Writer.Info(LogGroup.AdminApi, $"saved uploaded RBXM to: {rbxm}");
+
+			OBJ = Path.Combine(CWD, $"{Guid.NewGuid()}.obj");
+			await using (var stream = System.IO.File.Create(OBJ))
+			{
+				await request.OBJ.CopyToAsync(stream);
+			}
+			filestoclean.Add(OBJ);
+
+			Mesh = await ProcessOBJ(OBJ, CWD);
+			if (!System.IO.File.Exists(Mesh))
+			{
+				throw new StaffException($"Mesh was not created, your OBJ file may be invalid!");
+			}
+			filestoclean.Add(Mesh);
+
+			var newmesh = await UploadUGCMesh(Mesh);
+
+			rbxmx = await ConvertRBXM(rbxm, CWD);
+			filestoclean.Add(rbxmx);
+			Writer.Info(LogGroup.AdminApi, $"converted RBXM to RBXMX at: {rbxmx}");
+
+			await UpdateRBXM(rbxmx, newmesh);
+			Writer.Info(LogGroup.AdminApi, $"updated mesh ID in RBXMX");
+			var description = string.IsNullOrEmpty(request.Description) ? "No description provided" : request.Description;
+			
+			var result = await services.assets.CreateAsset(
+				request.Name,
+				description,
+				1,
+				CreatorType.User,
+				1,
+				System.IO.File.OpenRead(rbxmx),
+				request.AssetType,
+				Genre.All,
+				ModerationStatus.ReviewApproved,
+				DateTime.UtcNow,
+				DateTime.UtcNow
+			);
+
+			Writer.Info(LogGroup.AdminApi, $"uploaded custom item successfully");
+
+			return Ok(new MigrationResponse
+			{
+				success = true,
+				meshId = newmesh,
+				message = "Asset created successfully",
+			});
+		}
+		catch (Exception ex)
+		{
+			Writer.Info(LogGroup.AdminApi, $"failed: {ex}");
+			throw new StaffException($"failed: {ex.Message}");
+		}
+		finally
+		{
+			CleanupFiles(filestoclean);
+			try
+			{
+				if (CWD != null && Directory.Exists(CWD))
+				{
+					Directory.Delete(CWD, true);
+					Writer.Info(LogGroup.AdminApi, $"cleaned up: {CWD}");
+				}
+			}
+			catch (Exception ex)
+			{
+				Writer.Info(LogGroup.AdminApi, $"failed to clean up CWD: {ex}");
+			}
+		}
 	}
 
 	[HttpPost("asset/copy-ugc")]
@@ -3113,6 +3209,12 @@ Thank you for your understanding,
 			}
 		}
 		
+	private long GetAssetIDFromURL(string url)
+	{
+		var match = Regex.Match(url, @"catalog/(\d+)");
+		return match.Success ? long.Parse(match.Groups[1].Value) : 0;
+	}
+		
 	private async Task<string> ConvertRBXM(string rbxm, string CWD)
 	{
 		var rbxmkdir = Path.Combine(Configuration.PublicDirectory, "rbxmk");
@@ -3142,7 +3244,7 @@ Thank you for your understanding,
 		var rbxmkpath = Path.Combine(rbxmkdir, "rbxmk.exe");
 		if (!System.IO.File.Exists(rbxmkpath))
 		{
-			throw new FileNotFoundException($"rbxmk.exe not found at: {rbxmkpath}");
+			throw new FileNotFoundException($"rbxmk not found at: {rbxmkpath}");
 		}
 
 		var RBXMKProcess = new ProcessStartInfo
@@ -3175,7 +3277,7 @@ Thank you for your understanding,
 		var outPath = Path.Combine(rbxmkdir, outFile);
 		if (!System.IO.File.Exists(outPath))
 		{
-			throw new FileNotFoundException($"RBXMX not found at: {outPath}");
+			throw new FileNotFoundException($"RBXMX not found! This probably means that the URL you provided was invalid as it could not convert any RBXM.");
 		}
 
 		var finaloutPath = Path.Combine(CWD, outFile);
@@ -3212,7 +3314,8 @@ Thank you for your understanding,
 
 	private async Task<string> ProcessOBJ(string OBJ, string CWD)
 	{
-		var convertedmesh = Path.Combine(CWD, $"{Path.GetFileNameWithoutExtension(OBJ)}.mesh");
+		// OBJToRBXMesh does .obj.mesh for some reason
+		var convertedmesh = Path.Combine(CWD, $"{Path.GetFileName(OBJ)}.mesh");
 
 		var meshconvertpath = Path.Combine(Configuration.PublicDirectory, "OBJToRBXMesh.exe");
 		if (!System.IO.File.Exists(meshconvertpath))
@@ -3245,9 +3348,10 @@ Thank you for your understanding,
 		{
 			throw new Exception($"OBJ convert process exited. code: {process.ExitCode}, error: {error}");
 		}
-		
+		 
 		if (!System.IO.File.Exists(convertedmesh))
 		{
+			Writer.Info(LogGroup.AdminApi, $"OBJ out, mesh was not found: {output}");
 			throw new FileNotFoundException($"mesh file not found at: {convertedmesh}");
 		}
 		
@@ -3278,11 +3382,11 @@ Thank you for your understanding,
 	{
 		var content = await System.IO.File.ReadAllTextAsync(rbxm);
 		// TODO: does UGC also use assetdelivery/roblox URLS?
-		content = Regex.Replace(content, @"<string name=""MeshId"">rbxassetid://\d+</string>", 
-			$@"<string name=""MeshId"">rbxassetid://{newmesh}</string>");
+		content = Regex.Replace(content, @"<string name=""MeshId"">(rbxassetid://|https?://(www\.)?roblox\.com/asset/?\?id=|https?://assetdelivery\.roblox\.com/v1/asset/?\?id=)\d+</string>", 
+            $@"<string name=""MeshId"">rbxassetid://{newmesh}</string>");
 
-		content = Regex.Replace(content, @"<Content name=""MeshId""><url>rbxassetid://\d+</url></Content>", 
-			$@"<Content name=""MeshId""><url>rbxassetid://{newmesh}</url></Content>");
+		content = Regex.Replace(content, @"<Content name=""MeshId""><url>(rbxassetid://|https?://(www\.)?roblox\.com/asset/?\?id=|https?://assetdelivery\.roblox\.com/v1/asset/?\?id=)\d+</url></Content>", 
+            $@"<Content name=""MeshId""><url>rbxassetid://{newmesh}</url></Content>");
 		
 		await System.IO.File.WriteAllTextAsync(rbxm, content);
 	}

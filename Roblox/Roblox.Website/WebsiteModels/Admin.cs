@@ -156,7 +156,8 @@ public class UpdateNameRequest
 public class CreateAssetRequest
 {
     public string name { get; set; } = string.Empty;
-    public string description { get; set; } = string.Empty;
+	// nullable so description is ACTUALLY optional (panel lied...)
+    public string? description { get; set; } = "No description provided.";
     public Type assetTypeId { get; set; }
     public Genre genre { get; set; }
     public bool isForSale { get; set; }

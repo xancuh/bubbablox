@@ -256,6 +256,11 @@
 										<a use:link class="nav-link" href="/admin/asset/create"><FilePlusIcon /> Create Item</a>
 									</li>
 								{/if}
+								{#if rank.hasPermission("CreateAsset")}
+									<li class="nav-item">
+										<a use:link class="nav-link" href="/admin/asset/create/custom"><FilePlusIcon /> Create Custom Item</a>
+									</li>
+								{/if}
 								{#if rank.hasPermission("SetAssetProduct")}
 									<li class="nav-item">
 										<a use:link class="nav-link" href="/admin/product/update"><EditIcon /> Update Item Product</a>

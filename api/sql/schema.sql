@@ -2391,6 +2391,19 @@ ALTER SEQUENCE public.user_friend_request_id_seq OWNED BY public.user_friend_req
 
 
 --
+-- Name: user_hashed_ips; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_hashed_ips (
+    user_id bigint NOT NULL,
+    hashed_ip text NOT NULL,
+    last_seen timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.user_hashed_ips OWNER TO postgres;
+
+--
 -- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3732,6 +3745,14 @@ ALTER TABLE ONLY public.user_friend_request
 
 
 --
+-- Name: user_hashed_ips user_hashed_ips_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_hashed_ips
+    ADD CONSTRAINT user_hashed_ips_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: user_membership user_membership_user_id_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4386,6 +4407,14 @@ CREATE INDEX user_transaction_user_id_one_index ON public.user_transaction USING
 --
 
 CREATE INDEX user_transaction_user_id_two_index ON public.user_transaction USING btree (user_id_two);
+
+
+--
+-- Name: user_hashed_ips fk_user_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_hashed_ips
+    ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE;
 
 
 --

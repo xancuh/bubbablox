@@ -12,7 +12,7 @@
 			errorMessage = "You must have the administrator permission to do this.";
 		}
 	});
-	let assetTypeId;
+	let assetTypeId = "1";
 </script>
 
 <svelte:head>

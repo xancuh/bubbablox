@@ -873,7 +873,7 @@ public class WebController : ControllerBase
 					
 					var OBJProcess = new ProcessStartInfo
 					{
-						FileName = Path.Combine(Configuration.PublicDirectory, "OBJToRBXMesh.exe"),
+						FileName = Path.Combine(Configuration.PublicDirectory, "OBJToRBXMeshOBJ.exe"),
 						Arguments = $"\"{content}\" -obj",
 						WorkingDirectory = Configuration.AssetDirectory,
 						RedirectStandardOutput = true,

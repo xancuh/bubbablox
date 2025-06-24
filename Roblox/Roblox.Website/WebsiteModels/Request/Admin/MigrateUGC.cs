@@ -42,3 +42,20 @@ public class MigrationResponse
 	public long meshId { get; set; }
 	public string message { get; set; }
 }
+
+public class UploadCustomAssetReq
+{
+    [Required]
+    public IFormFile RBXM { get; set; }
+    
+    [Required]
+    public IFormFile OBJ { get; set; }
+    
+    [Required]
+    public string Name { get; set; }
+    
+    public string? Description { get; set; } = "No description provided.";
+    
+    [Required]
+    public Type AssetType { get; set; }
+}
