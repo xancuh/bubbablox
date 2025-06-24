@@ -156,16 +156,6 @@ public class UsersService : ServiceBase, IService
 		return hasher.Verify(dbPass.password, password);
 	}
 
-    public async Task UpdatePassword(long userId, string newPassword)
-    {
-        var hasher = new PasswordHasher();
-        var hash = hasher.Hash(newPassword);
-        await UpdateAsync("user", userId, new
-        {
-            password = hash,
-        });
-    }
-
     public async Task UnlockAccount(long userId)
     {
         await db.ExecuteAsync("UPDATE \"user\" SET status = :status WHERE id = :id", new
@@ -387,7 +377,9 @@ public class UsersService : ServiceBase, IService
             });
 
     }
-		
+	
+	// this really sucks but it works so
+	// user requests discord callback, it creates a token and sets the cookie
 	public async Task CreatePasswordResetToken(long userId, string token, DateTime expiry)
 	{
 		await db.ExecuteAsync(
@@ -397,6 +389,7 @@ public class UsersService : ServiceBase, IService
 			new { userId, token, expiresAt = expiry });
 	}
 	
+	// then we validate the token before resetting
 	public async Task<bool> ValidatePasswordResetToken(long userId, string token)
 	{
 		var valid = await db.ExecuteScalarAsync<bool>(
@@ -405,13 +398,15 @@ public class UsersService : ServiceBase, IService
 			new { userId, token });
 		return valid;
 	}
-
+	
+	// once done, delete the token
 	public async Task DeleteResetPassword(long userId, string token)
 	{
 		await db.ExecuteAsync(
-			"UPDATE password_reset_tokens SET used = true WHERE user_id = @userId AND token = @token",
+			"DELETE FROM password_reset_tokens WHERE user_id = @userId AND token = @token",
 			new { userId, token });
 	}
+
 
 	public async Task<long> GetUserIdFromDiscordId(string discordId)
 	{
@@ -420,7 +415,7 @@ public class UsersService : ServiceBase, IService
 			new { discordId });
 	}
 	
-	public async Task UpdateUserHashedIp(long userId, string hashedIp)
+	public async Task UpdateUserHashedIp(long userId, string iphash)
 	{
 		await db.ExecuteAsync(
 			"INSERT INTO user_hashed_ips (user_id, hashed_ip, last_seen) VALUES (:user_id, :hashed_ip, NOW()) " +
@@ -428,76 +423,51 @@ public class UsersService : ServiceBase, IService
 			new
 			{
 				user_id = userId,
-				hashed_ip = hashedIp
+				hashed_ip = iphash
 			});
 	}
 	
-public async Task ChangePassword(long userId, string newPassword)
-{
-    // Debugging: Log method entry with parameters (redacting password for security)
-    Debug.WriteLine($"ChangePassword called for userId: {userId}, newPassword: [REDACTED]");
-    
-    if (!IsPasswordValid(newPassword))
-    {
-        Debug.WriteLine("Password validation failed");
-        throw new ArgumentException("Password invalid");
-    }
-    
-    Debug.WriteLine("Password validation succeeded");
+	public async Task ChangePassword(long userId, string newPW)
+	{
+		if (!IsPasswordValid(newPW))
+		{
+			throw new ArgumentException("Bad password");
+		}
 
-    var hasher = new PasswordHasher();
-    var newpw = hasher.Hash(newPassword);
-    Debug.WriteLine("Password hashed successfully");
+		var hasher = new PasswordHasher();
+		var newpw = hasher.Hash(newPW);
 
-    try
-    {
-        Debug.WriteLine("Attempting database update...");
-        int affectedRows = await db.ExecuteAsync(
-            "UPDATE \"user\" SET password = :newPassword WHERE id = :userId",
-            new 
-            {
-                userId,
-                newPassword = newpw
-            });
-            
-        Debug.Assert(affectedRows == 1, $"Expected to update 1 row, but updated {affectedRows} rows");
-        Debug.WriteLine("Database update successful");
-    }
-    catch (Exception ex)
-    {
-        Debug.WriteLine($"Database update failed: {ex.Message}");
-        throw; // Re-throw to maintain original behavior
-    }
+		try
+		{
+			await db.ExecuteAsync(
+				"UPDATE \"user\" SET password = :newPW WHERE id = :userId",
+				new 
+				{
+					userId,
+					newPW = newpw
+				});
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"db pw update failed: {ex.Message}");
+			throw;
+		}
 
-    try
-    {
-        Debug.WriteLine("Attempting to expire all sessions...");
-        await ExpireAllSessions(userId);
-        Debug.WriteLine("Session expiration successful");
-    }
-    catch (Exception ex)
-    {
-        Debug.WriteLine($"Session expiration failed: {ex.Message}");
-        throw;
-    }
+		await ExpireAllSessions(userId);
 
-    try
-    {
-        Debug.WriteLine("Attempting to clear user cache...");
-        using (var userCache = ServiceProvider.GetOrCreate<GetUserByIdCache>())
-        {
-            userCache.Remove(userId);
-        }
-        Debug.WriteLine("User cache cleared successfully");
-    }
-    catch (Exception ex)
-    {
-        Debug.WriteLine($"Cache clearance failed: {ex.Message}");
-        throw;
-    }
-
-    Debug.WriteLine("ChangePassword completed successfully");
-}
+		try
+		{
+			using (var userCache = ServiceProvider.GetOrCreate<GetUserByIdCache>())
+			{
+				userCache.Remove(userId);
+			}
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"user cache clear failed: {ex.Message}");
+			throw;
+		}
+	}
 
     /// <summary>
     /// Charge the user username price, and change the user's username
@@ -2456,7 +2426,7 @@ public async Task ChangePassword(long userId, string newPassword)
         return result;
     }
 
-    public async Task RedeemPasswordReset(string id, string newPassword)
+    public async Task RedeemPasswordReset(string id, string newPW)
     {
         // First, get the ticket and update its state
         var ticket = await GetPasswordResetEntry(id);
@@ -2472,7 +2442,7 @@ public async Task ChangePassword(long userId, string newPassword)
         if (updated != 1)
             throw new ArgumentException("Password reset was already redeemed");
         
-        await UpdatePassword(ticket.userId, newPassword);
+        await ChangePassword(ticket.userId, newPW);
     }
 
     public bool IsThreadSafe()

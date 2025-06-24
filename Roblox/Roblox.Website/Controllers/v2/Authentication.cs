@@ -55,7 +55,7 @@ public class AuthenticationControllerV2 : ControllerBase
             throw new BadRequestException(8, "Password does not match");
         }
         // We can update the user's password now
-        await services.users.UpdatePassword(safeUserSession.userId, request.newPassword);
+        await services.users.ChangePassword(safeUserSession.userId, request.newPassword);
     }
 
     [HttpPost("logout")]
@@ -114,7 +114,7 @@ public class AuthenticationControllerV2 : ControllerBase
         await CreateSessionAndSetCookie(userId);
     }
 
-    [HttpPost("signup")]
+/*     [HttpPost("signup")]
     public async Task<SignupResponse> Signup([Required] SignUpRequest request)
     {
         throw new RobloxException(503, 0, "Service temporarily unavailable");
@@ -143,7 +143,7 @@ public class AuthenticationControllerV2 : ControllerBase
         {
             userId = createdUser.userId,
         };
-    }
+    } */
 
     [HttpPost("logoutfromallsessionsandreauthenticate")]
     public async Task LogoutFromAllSessionsAndReAuthenticate()
