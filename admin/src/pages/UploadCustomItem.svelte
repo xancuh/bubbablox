@@ -64,13 +64,13 @@
 </script>
 
 <svelte:head>
-    <title>Upload Custom Item</title>
+    <title>Create Custom Item</title>
 </svelte:head>
 
 <Main>
     <div class="row">
         <div class="col-12">
-            <h1>Upload Custom Item</h1>
+            <h1>Create Custom Item</h1>
             {#if errmsg}
                 <div class="alert alert-danger">{errmsg}</div>
             {/if}

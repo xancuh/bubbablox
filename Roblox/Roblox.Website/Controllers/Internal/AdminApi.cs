@@ -3157,57 +3157,57 @@ Thank you for your understanding,
 			await UpdateRBXM(rbxmx, newmesh); // use RBXMX cause i HATE RBXM SO MUCH!!!
 			Writer.Info(LogGroup.AdminApi, $"updated mesh ID in RBXMX");
 
-					// get asset details from roblox
-					var assetDetails = await GetRBXAssetInfo(assetId);
-					Writer.Info(LogGroup.AdminApi, $"got asset details for: {assetId}");
+			// get asset details from roblox
+			var assetDetails = await GetRBXAssetInfo(assetId);
+			Writer.Info(LogGroup.AdminApi, $"got asset details for: {assetId}");
 
-					var result = await UploadUGC(rbxmx, assetDetails);
-					Writer.Info(LogGroup.AdminApi, $"uploaded UGC successfully");
+			var result = await UploadUGC(rbxmx, assetDetails);
+			Writer.Info(LogGroup.AdminApi, $"uploaded UGC successfully");
 
-					return Ok(new MigrationResponse
-					{
-						success = true,
-						meshId = newmesh,
-						message = "Asset copied successfully",
-					});
-				}
-				catch (Exception ex)
+			return Ok(new MigrationResponse
+			{
+				success = true,
+				meshId = newmesh,
+				message = "Asset copied successfully",
+			});
+		}
+		catch (Exception ex)
+		{
+			Writer.Info(LogGroup.AdminApi, $"Copy failed: {ex}");
+			throw new StaffException($"Copy failed: {ex.Message}");
+		}
+		finally
+		{
+			CleanupFiles(filestoclean);
+			try
+			{
+				if (CWD != null && Directory.Exists(CWD))
 				{
-					Writer.Info(LogGroup.AdminApi, $"Copy failed: {ex}");
-					throw new StaffException($"Copy failed: {ex.Message}");
-				}
-				finally
-				{
-					CleanupFiles(filestoclean);
-					try
-					{
-						if (CWD != null && Directory.Exists(CWD))
-						{
-							Directory.Delete(CWD, true);
-							Writer.Info(LogGroup.AdminApi, $"cleaned up: {CWD}");
-						}
-					}
-					catch (Exception ex)
-					{
-						Writer.Info(LogGroup.AdminApi, $"failed to clean up CWD: {ex}");
-					}
+					Directory.Delete(CWD, true);
+					Writer.Info(LogGroup.AdminApi, $"cleaned up: {CWD}");
 				}
 			}
-
-		private void CleanupFiles(List<string> files)
-		{
-			foreach (var file in files.Where(System.IO.File.Exists))
+			catch (Exception ex)
 			{
-				try
-				{
-					System.IO.File.Delete(file);
-				}
-				catch (Exception ex)
-				{
-					Writer.Info(LogGroup.AdminApi, $"failed to delete temp file {file}: {ex}");
-				}
+				Writer.Info(LogGroup.AdminApi, $"failed to clean up CWD: {ex}");
 			}
 		}
+	}
+
+	private void CleanupFiles(List<string> files)
+	{
+		foreach (var file in files.Where(System.IO.File.Exists))
+		{
+			try
+			{
+				System.IO.File.Delete(file);
+			}
+			catch (Exception ex)
+			{
+				Writer.Info(LogGroup.AdminApi, $"failed to delete temp file {file}: {ex}");
+			}
+		}
+	}
 		
 	private long GetAssetIDFromURL(string url)
 	{
@@ -3277,7 +3277,7 @@ Thank you for your understanding,
 		var outPath = Path.Combine(rbxmkdir, outFile);
 		if (!System.IO.File.Exists(outPath))
 		{
-			throw new FileNotFoundException($"RBXMX not found! This probably means that the URL you provided was invalid as it could not convert any RBXM.");
+			throw new FileNotFoundException($"RBXMX not found! This probably means that the catalog link you provided was invalid as it could not convert/find any valid RBXM.");
 		}
 
 		var finaloutPath = Path.Combine(CWD, outFile);
@@ -3352,7 +3352,7 @@ Thank you for your understanding,
 		if (!System.IO.File.Exists(convertedmesh))
 		{
 			Writer.Info(LogGroup.AdminApi, $"OBJ out, mesh was not found: {output}");
-			throw new FileNotFoundException($"mesh file not found at: {convertedmesh}");
+			throw new FileNotFoundException($"Mesh was not found! Is your OBJ valid?");
 		}
 		
 		return convertedmesh;
@@ -3363,7 +3363,7 @@ Thank you for your understanding,
 		await using var stream = System.IO.File.OpenRead(Mesh);
 		var result = await services.assets.CreateAsset(
 			Path.GetFileNameWithoutExtension(Mesh),
-			"Mesh for copied UGC",
+			"Mesh for custom asset",
 			1,
 			CreatorType.User,
 			1,
@@ -3380,8 +3380,8 @@ Thank you for your understanding,
 
 	private async Task UpdateRBXM(string rbxm, long newmesh)
 	{
+		// i hope there's not some obscure other meshID xml thing so it works fine
 		var content = await System.IO.File.ReadAllTextAsync(rbxm);
-		// TODO: does UGC also use assetdelivery/roblox URLS?
 		content = Regex.Replace(content, @"<string name=""MeshId"">(rbxassetid://|https?://(www\.)?roblox\.com/asset/?\?id=|https?://assetdelivery\.roblox\.com/v1/asset/?\?id=)\d+</string>", 
             $@"<string name=""MeshId"">rbxassetid://{newmesh}</string>");
 
@@ -3413,6 +3413,8 @@ Thank you for your understanding,
 			CreatorType.User,
 			1,
 			stream,
+			// sometimes the assettypeid is like a left shoe or something so idk what to do about that
+			// TODO: add invalid assetypeids here
 			(Type)details.AssetTypeId,
 			Genre.All,
 			ModerationStatus.ReviewApproved,
