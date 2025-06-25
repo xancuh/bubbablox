@@ -105,7 +105,7 @@ namespace Roblox.Rendering
                     
                     if (wsCurrentState is WebSocketState.Aborted or WebSocketState.Closed or WebSocketState.None or WebSocketState.CloseReceived or WebSocketState.CloseSent)
                     {
-                        Console.WriteLine("[info] ws connection is in state {0}, so we are re-connecting", ws.State);
+                        Console.WriteLine("[info] ws connection is in state {0}, so we are re-connecting (did you start the renderer?) state:", ws.State);
                         mux.WaitOne();
                         ws = new ClientWebSocket();
                         mux.ReleaseMutex();
@@ -115,7 +115,7 @@ namespace Roblox.Rendering
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("[info] ConnectionManager got error in ws connection {0}", e.Message);
+                    Console.WriteLine("[info] ConnectionManager error in WebSocket connection {0} error:", e.Message);
                     await Task.Delay(TimeSpan.FromSeconds(5));
                 }
             }

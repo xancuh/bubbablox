@@ -58,13 +58,13 @@
 </script>
 
 <svelte:head>
-    <title>Update Thumbnail</title>
+    <title>Update Asset Thumbnail</title>
 </svelte:head>
 
 <Main>
     <div class="row">
         <div class="col-12">
-            <h1>Update Thumbnail</h1>
+            <h1>Update Asset Thumbnail</h1>
 
             {#if errmsg}
                 <div class="alert alert-danger">{errmsg}</div>

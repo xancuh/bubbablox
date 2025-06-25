@@ -24,7 +24,7 @@
 
         try {
             if (!rbxURL || !OBJ) {
-                throw new Error("Roblox asset URL and OBJ file are required");
+                throw new Error("Roblox URL and OBJ are required");
             }
 
             const formData = new FormData();
@@ -100,6 +100,7 @@
                         required
                         disabled={disabled || loading}
                     />
+                   <div class="form-text">This will also work with any ROBLOX asset that has a newer mesh.</div>
                 </div>
 
                 <div class="col-12 mt-4">

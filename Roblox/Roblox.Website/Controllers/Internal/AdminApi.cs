@@ -3002,6 +3002,7 @@ Thank you for your understanding,
     }
 	
 	// this is for Not a Bad Bubba
+	// basically does the same thing as copy ugc but with a custom RBXM the user uploads
 	[HttpPost("asset/create-custom-asset")]
 	[StaffFilter(Access.CreateAsset)]
 	public async Task<IActionResult> UploadCustomAsset([FromForm] UploadCustomAssetReq request)
@@ -3054,7 +3055,7 @@ Thank you for your understanding,
 
 			await UpdateRBXM(rbxmx, newmesh);
 			Writer.Info(LogGroup.AdminApi, $"updated mesh ID in RBXMX");
-			var description = string.IsNullOrEmpty(request.Description) ? "No description provided" : request.Description;
+			var description = string.IsNullOrEmpty(request.Description) ? "No description provided." : request.Description;
 			
 			var result = await services.assets.CreateAsset(
 				request.Name,

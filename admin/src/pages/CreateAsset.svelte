@@ -30,7 +30,7 @@
 		</div>
 		<div class="col-6">
 			<label for="name">Name</label>
-			<input type="text" class="form-control" id="name" {disabled} />
+			<input type="text" class="form-control" id="name" {disabled} required />
 		</div>
 		<div class="col-6">
 			<label for="description">Description (Optional)</label>
@@ -68,7 +68,7 @@
 		{:else}
 			<div class="col-12 mt-4 mb-4">
 				<label for="rbxm">.RBXM File</label>
-				<input type="file" class="form-control" id="rbxm" />
+				<input type="file" class="form-control" id="rbxm" required />
 			</div>
 		{/if}
 		<div class="col-12">
