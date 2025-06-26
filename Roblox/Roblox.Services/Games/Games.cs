@@ -247,6 +247,42 @@ public class GamesService : ServiceBase, IService
             max = maxPlayerCount,
         });
     }
+	
+	public async Task SetGearPermission(long placeId, bool isEnabled)
+	{
+		await db.ExecuteAsync("UPDATE asset_place SET gear_permission = :permission WHERE asset_id = :id", new
+		{
+			id = placeId,
+			permission = isEnabled,
+		});
+	}
+
+	public async Task<bool> AreGearsEnabled(long placeId)
+	{
+		var result = await db.QuerySingleOrDefaultAsync<bool>(
+			"SELECT gear_permission FROM asset_place WHERE asset_id = :id",
+			new { id = placeId });
+		
+		return result;
+	}
+	
+	public async Task SetPlayable(long placeId, bool isPlayable)
+	{
+		await db.ExecuteAsync("UPDATE asset_place SET playable = :is_playable WHERE asset_id = :id", new
+		{
+			id = placeId,
+			is_playable = isPlayable,
+		});
+	}
+	
+	public async Task<bool> IsPlayable(long placeId)
+	{
+		var result = await db.QuerySingleOrDefaultAsync<bool>(
+			"SELECT playable FROM asset_place WHERE asset_id = :id",
+			new { id = placeId });
+			
+		return result;
+	}
 
     public async Task<IEnumerable<PlaceEntry>> MultiGetPlaceDetails(IEnumerable<long> placeIds)
     {
@@ -256,7 +292,7 @@ public class GamesService : ServiceBase, IService
 
         var query = new SqlBuilder();
         var temp = query.AddTemplate(
-            "SELECT asset.id as universeRootPlaceId, asset.creator_id as builderId, asset.creator_type as builderType, universe_asset.universe_id as universeId, asset.name, asset.id as placeId, asset.description as description, asset.asset_genre as genre, (select count(*) as playerCount FROM asset_server_player WHERE asset_server_player.asset_id = asset.id), (case when \"asset\".creator_type = 1 then \"user\".username else \"group\".name end) as builder, asset.created_at as created, asset.updated_at as updated, asset_place.max_player_count as maxPlayerCount, asset.asset_genre as genre, asset.moderation_status as moderationStatus FROM asset INNER JOIN universe_asset ON universe_asset.asset_id = asset.id INNER JOIN asset_place ON asset_place.asset_id = asset.id LEFT JOIN \"group\" ON \"group\".id = asset.creator_id AND asset.creator_type = 2 LEFT JOIN \"user\" ON \"user\".id = asset.creator_id AND asset.creator_type = 1 /**where**/ /**orderby**/ LIMIT 100");
+            "SELECT asset.id as universeRootPlaceId, asset.creator_id as builderId, asset.creator_type as builderType, universe_asset.universe_id as universeId, asset.name, asset.id as placeId, asset.description as description, asset.asset_genre as genre, (select count(*) as playerCount FROM asset_server_player WHERE asset_server_player.asset_id = asset.id), (case when \"asset\".creator_type = 1 then \"user\".username else \"group\".name end) as builder, asset.created_at as created, asset.updated_at as updated, asset_place.max_player_count as maxPlayerCount, asset_place.gear_permission as gearPermissions, asset.asset_genre as genre, asset.moderation_status as moderationStatus, asset_place.playable as isPlayable FROM asset INNER JOIN universe_asset ON universe_asset.asset_id = asset.id INNER JOIN asset_place ON asset_place.asset_id = asset.id LEFT JOIN \"group\" ON \"group\".id = asset.creator_id AND asset.creator_type = 2 LEFT JOIN \"user\" ON \"user\".id = asset.creator_id AND asset.creator_type = 1 /**where**/ /**orderby**/ LIMIT 100");
 
         foreach (var id in ids)
         {

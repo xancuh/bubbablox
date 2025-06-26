@@ -5,11 +5,11 @@
     import * as rank from "../stores/rank";
 
     let assetId: string = "";
-    let rapValue: string = "";
+    let RAPVal: string = "";
     let disabled = false;
     let loading = false;
     let errmsg: string | undefined;
-    let successMessage: string | undefined;
+    let successmsg: string | undefined;
 
     rank.promise.then(() => {
         if (!rank.hasPermission("SetAssetProduct")) {
@@ -20,17 +20,17 @@
     
     async function setRap() {
         errmsg = undefined;
-        successMessage = undefined;
+        successmsg = undefined;
         loading = true;
 
-        if (!assetId || !rapValue) {
-            errmsg = "Both Asset ID and RAP value are required";
-            loading = false;
-            return;
-        }
+		if (!assetId || RAPVal === null || RAPVal === undefined || RAPVal === "") {
+			errmsg = "Both Asset ID and RAP value are required";
+			loading = false;
+			return;
+		}
         
-        const rapNumber = parseFloat(rapValue);
-        if (isNaN(rapNumber) || rapNumber < 0 || rapNumber > 100000000) {
+        const RAP = parseFloat(RAPVal);
+        if (isNaN(RAP) || RAP < 0 || RAP > 100000000) {
             errmsg = "RAP must be a number between 0 and 100 million";
             loading = false;
             return;
@@ -41,11 +41,11 @@
                 `/asset/set-rap`,
                 {
                     assetId: parseInt(assetId),
-                    rap: rapNumber
+                    rap: RAP
                 }
             );
             
-            successMessage = `Set RAP for asset ${assetId} to ${rapNumber.toLocaleString()}`;
+            successmsg = `Set RAP for asset ${assetId} to ${RAP.toLocaleString()}`;
             
         } catch (error) {
             errmsg = error.message || "Failed to set RAP, please try again";
@@ -68,8 +68,8 @@
                 <div class="alert alert-danger">{errmsg}</div>
             {/if}
             
-            {#if successMessage}
-                <div class="alert alert-success">{successMessage}</div>
+            {#if successmsg}
+                <div class="alert alert-success">{successmsg}</div>
             {/if}
         </div>
         
@@ -93,7 +93,7 @@
                         type="number" 
                         class="form-control" 
                         id="rap-value" 
-                        bind:value={rapValue}
+                        bind:value={RAPVal}
                         placeholder="RAP"
                         required
                         disabled={disabled || loading}
@@ -104,12 +104,12 @@
 				<button 
 					type="submit" 
 					class="btn btn-success"
-					disabled={disabled || loading || !assetId || !rapValue}
+					disabled={disabled || loading || !assetId}
 				>
                         {#if loading}
                             Setting RAP...
                         {:else}
-                            Apply
+                            Set
                         {/if}
                     </button>
                 </div>

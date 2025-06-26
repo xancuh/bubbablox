@@ -456,6 +456,11 @@ public class WebController : ControllerBase
 	public async Task<string> GetJoinScript(long placeId)
 	{
 		FeatureFlags.FeatureCheck(FeatureFlag.GameJoinEnabled);
+		
+		if (!await services.games.IsPlayable(placeId))
+		{
+			throw new BadRequestException(400, "You can not access this place at this time.");
+		}
 
 		var placeInfo = await services.assets.GetAssetCatalogInfo(placeId);
 		if (placeInfo.assetType != Models.Assets.Type.Place)

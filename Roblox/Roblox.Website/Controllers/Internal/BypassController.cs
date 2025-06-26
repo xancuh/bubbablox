@@ -1565,11 +1565,21 @@ namespace Roblox.Website.Controllers
 		[HttpGetBypass("/game/PlaceLauncherBT.ashx")]
 		[HttpPostBypass("/game/PlaceLauncherBT.ashx")]
 		public async Task<dynamic> PlaceLaunchBT(long placeId)
-		{
-			bool bypassSessionCheck = Request.Headers.TryGetValue("btzawgPHPgameserverstart", out var headerValue) 
+		{	
+			if (!await services.games.IsPlayable(placeId))
+			{
+				return BadRequest(new 
+				{
+					jobId = (string?)null,
+					status = (int)JoinStatus.Error,
+					message = "You can not access this place at this time."
+				});
+			}
+			
+			bool bypasscheck = Request.Headers.TryGetValue("btzawgPHPgameserverstart", out var headerValue) 
 									  && headerValue == "startgamesessionforthisplace";
 
-			if (userSession == null && !bypassSessionCheck)
+			if (userSession == null && !bypasscheck)
 			{
 				return BadRequest();
 			}
@@ -1741,34 +1751,46 @@ namespace Roblox.Website.Controllers
 		}
 
 		[HttpGetBypass("Asset/CharacterFetch.ashx")]
-		public async Task<string> CharacterFetch(long userId)
+		public async Task<string> CharacterFetch(long userId, long placeId)
 		{
-			var assets = await services.avatar.GetWornAssets(userId);
+			var assets = (await services.avatar.GetWornAssets(userId)).ToList();
 			
 			// filter out gears if the FFlag is disabled
 			if (!FeatureFlags.IsEnabled(FeatureFlag.GearsEnabled))
 			{
-				var filtered = new List<long>();
-				foreach (var assetId in assets)
-				{
-					try 
-					{
-						var assetInfo = await services.assets.GetAssetCatalogInfo(assetId);
-						if (assetInfo.assetType != Type.Gear)
-						{
-							filtered.Add(assetId);
-						}
-					}
-					catch
-					{
-						// if we can't get asset info, just include it anyway
-						filtered.Add(assetId);
-					}
-				}
-				assets = filtered;
+				return await FilterOutGears(assets, userId);
+			}
+			
+			// if game has gears enabled, then include them and if not then it filters them out
+			var gearsEnabled = await services.games.AreGearsEnabled(placeId);
+			if (!gearsEnabled)
+			{
+				return await FilterOutGears(assets, userId);
 			}
 			
 			return $"{Configuration.BaseUrl}/Asset/BodyColors.ashx?userId={userId};{string.Join(";", assets.Select(c => Configuration.BaseUrl + "/Asset/?id=" + c))}";
+		}
+
+		private async Task<string> FilterOutGears(List<long> assets, long userId)
+		{
+			var filtered = new List<long>();
+			foreach (var assetId in assets)
+			{
+				try 
+				{
+					var assetInfo = await services.assets.GetAssetCatalogInfo(assetId);
+					if (assetInfo.assetType != Type.Gear)
+					{
+						filtered.Add(assetId);
+					}
+				}
+				catch
+				{
+					// if we can't get asset info for some reason, just include it anyway
+					filtered.Add(assetId);
+				}
+			}
+			return $"{Configuration.BaseUrl}/Asset/BodyColors.ashx?userId={userId};{string.Join(";", filtered.Select(c => Configuration.BaseUrl + "/Asset/?id=" + c))}";
 		}
 		    
         [HttpGet("marketplace/productinfo")]

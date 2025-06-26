@@ -3,6 +3,7 @@ import { createUseStyles } from "react-jss";
 import getFlag from "../../../lib/getFlag";
 import { launchGame } from "../../../services/games";
 import AuthenticationStore from "../../../stores/authentication";
+import gameDetailsStore from "../stores/gameDetailsStore";
 import useButtonStyles from "../../../styles/buttonStyles";
 import ActionButton from "../../actionButton";
 
@@ -16,6 +17,11 @@ const useStyles = createUseStyles({
     paddingTop: '2px',
     paddingBottom: '4px',
   },
+  disabledText: {
+    color: '#ff0000',
+    textAlign: 'center',
+    marginBottom: '8px',
+  }
 })
 
 /**
@@ -26,34 +32,46 @@ const useStyles = createUseStyles({
 const PlayButton = props => {
   const [error, setError] = useState(null);
   const auth = AuthenticationStore.useContainer();
+  const gameDetails = gameDetailsStore.useContainer();
   const s = useStyles();
   const buttonStyles = useButtonStyles();
+  
   const onClick = e => {
+    if (!gameDetails.placeDetails?.isPlayable) return;
+    
     if (getFlag('launchUsingEsURI', false)) {
-      e && e.preventDefault && e.preventDefault();
+      e?.preventDefault();
       if (!auth.isAuthenticated) {
         window.location.href = '/Login';
-        return
+        return;
       }
       launchGame({
         placeId: props.placeId,
       }).catch(e => {
-        // todo: modal
+		// todo: modal
         setError(e.message);
       });
-    }else if (getFlag('launchUsingEsWeb', false)) {
+    } else if (getFlag('launchUsingEsWeb', false)) {
       window.location.href = '/RobloxApp/Play?placeId=' + props.placeId;
-    }else{
-      // TODO: Roblox URI handling here (is this even possible?)
+    } else {
+	  // TODO: Roblox URI handling here (is this even possible?)
       alert('Support for joining ROBLOX games is not implemented. You will be redirected to ROBLOX to play this game.');
       window.location.href = 'https://www.roblox.com/games/' + props.placeId + '/--';
     }
   }
 
+  const isDisabled = !gameDetails.placeDetails?.isPlayable;
+
   return <div className='row'>
     <div className={'col-12 mx-auto ' + s.buttonWrapper}>
       {error && <p className='text-danger mb-1 mt-1'>{error}</p>}
-      <ActionButton label='Play' className={s.button + ' ' + buttonStyles.buyButton} onClick={onClick}></ActionButton>
+      {isDisabled && <p className={s.disabledText}>You cannot access this place at this time.</p>}
+      <ActionButton 
+        label='Play' 
+        className={s.button + ' ' + buttonStyles.buyButton} 
+        onClick={onClick}
+        disabled={isDisabled}
+      />
     </div>
   </div>
 }

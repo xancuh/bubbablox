@@ -2,7 +2,7 @@ import updatePlaceStore from "../stores/updatePlaceStore";
 import {useEffect, useState} from "react";
 import ActionButton from "../../actionButton";
 import useButtonStyles from "../../../styles/buttonStyles";
-import {updateAsset} from "../../../services/develop";
+import {updateAsset, setPlayable} from "../../../services/develop";
 /*
     public enum Genre
     {
@@ -97,6 +97,7 @@ const BasicSettings = props => {
   const [description, setDescription] = useState(null); // nullable
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [genre, setGenre] = useState('All');
+  const [isPlayable, setIsPlayable] = useState(true);
   const [feedback, setFeedback] = useState(null);
   const s = useButtonStyles();
 
@@ -105,79 +106,122 @@ const BasicSettings = props => {
     setName(store.details.name);
     setDescription(store.details.description);
     setGenre(store.details.genre);
+    setIsPlayable(store.details.isPlayable ?? true);
   }
 
   useEffect(() => {
     resetForm();
   }, [store.details]);
 
-  const save = () => {
+  const save = async () => {
     if (store.locked) return;
     store.setLocked(true);
+    setFeedback(null);
 
-    updateAsset({
-      assetId: store.placeId,
-      name,
-      description,
-      genres: [genre],
-      isCopyingAllowed: false,
-      enableComments: commentsEnabled === 'true',
-    }).then(() => {
+    try {
+      await updateAsset({
+        assetId: store.placeId,
+        name,
+        description,
+        genres: [genre],
+        isCopyingAllowed: false,
+        enableComments: commentsEnabled === 'true',
+      });
+
+    if (isPlayable !== store.details.isPlayable) {
+      if (!store.details?.universeId) {
+        throw new Error("could not get universe");
+      }
+      
+      await setPlayable({
+        universeId: store.details.universeId,
+        isPlayable: isPlayable
+      });
+    }
+	
       window.location.reload();
-    }).catch(e => {
+    } catch (e) {
       // set error
-      if (e.response && e.response.data && e.response.data.errors && e.response.data.errors.length) {
-        let msg = e.response.data.errors[0];
-        setFeedback(msg.message);
-      }else{
+      if (e.response?.data?.errors?.length) {
+        setFeedback(e.response.data.errors[0].message);
+      } else {
         setFeedback(e.message);
       }
       store.setLocked(false);
-    })
+    }
   }
 
-  return <div className='row mt-4'>
-    <div className='col-6'>
-      <h2 className='fw-bolder mb-4'>Basic Settings</h2>
-      {feedback ? <p className='mb-0 text-danger'>{feedback}</p> : null}
-      <p className='mb-0 fw-bold'>Name:</p>
-      <input type='text' className='w-100' value={name} onChange={(e) => {
-        setName(e.currentTarget.value);
-      }} />
-      <p className='mb-0 fw-bold mt-2'>Description:</p>
-      <textarea rows={8} className='w-100' value={description || ''} onChange={(e) => {
-        setDescription(e.currentTarget.value);
-      }} />
-      <p className='mb-0 fw-bold mt-2'>Comments Enabled:</p>
-      <select value={commentsEnabled} onChange={e => {
-        setCommentsEnabled(e.currentTarget.value);
-      }}>
-        <option value='true'>Yes</option>
-        <option value='false'>No</option>
-      </select>
-      <p className='mb-0 fw-bold mt-2'>Genre:</p>
-      <select value={genre} onChange={(e) => {
-        setGenre(e.currentTarget.value);
-      }}>
-        {
-          genres.map(v => {
-            return <option key={v.value} value={v.value}>{v.name}</option>
-          })
-        }
-      </select>
-      <div className='mt-4'>
-        <div className='d-inline-block'>
-          <ActionButton disabled={store.locked} className={s.normal + ' ' + s.continueButton} label='Save' onClick={save} />
-        </div>
-        <div className='d-inline-block ms-4'>
-
-          <ActionButton disabled={store.locked} className={s.normal + ' ' + s.cancelButton} label='Cancel' onClick={() => {
-            resetForm();
-          }} />
+  return (
+    <div className='row mt-4'>
+      <div className='col-6'>
+        <h2 className='fw-bolder mb-4'>Basic Settings</h2>
+        {feedback && <p className='mb-0 text-danger'>{feedback}</p>}
+        
+        <p className='mb-0 fw-bold'>Name:</p>
+        <input 
+          type='text' 
+          className='w-100' 
+          value={name} 
+          onChange={(e) => setName(e.currentTarget.value)} 
+        />
+        
+        <p className='mb-0 fw-bold mt-2'>Description:</p>
+        <textarea 
+          rows={8} 
+          className='w-100' 
+          value={description || ''} 
+          onChange={(e) => setDescription(e.currentTarget.value)} 
+        />
+        
+        <p className='mb-0 fw-bold mt-2'>Comments Enabled:</p>
+        <select 
+          value={commentsEnabled} 
+          onChange={e => setCommentsEnabled(e.currentTarget.value)}
+        >
+          <option value='true'>Yes</option>
+          <option value='false'>No</option>
+        </select>
+		
+		 <p className='mb-0 fw-bold mt-2'>Can people access your place:</p>
+        <select 
+          value={isPlayable} 
+          onChange={e => setIsPlayable(e.currentTarget.value === 'true')}
+        >
+          <option value={true}>Yes</option>
+          <option value={false}>No</option>
+        </select>
+        
+        <p className='mb-0 fw-bold mt-2'>Genre:</p>
+        <select 
+          value={genre} 
+          onChange={(e) => setGenre(e.currentTarget.value)}
+        >
+          {genres.map(v => (
+            <option key={v.value} value={v.value}>{v.name}</option>
+          ))}
+        </select>
+        
+        <div className='mt-4'>
+          <div className='d-inline-block'>
+            <ActionButton 
+              disabled={store.locked} 
+              className={`${s.normal} ${s.continueButton}`} 
+              label='Save' 
+              onClick={save} 
+            />
+          </div>
+          <div className='d-inline-block ms-4'>
+            <ActionButton 
+              disabled={store.locked} 
+              className={`${s.normal} ${s.cancelButton}`} 
+              label='Cancel' 
+              onClick={resetForm} 
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  );
 }
 
 export default BasicSettings;

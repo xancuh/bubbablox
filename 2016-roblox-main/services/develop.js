@@ -70,3 +70,15 @@ export const setUniverseMaxPlayers = async ({universeId, maxPlayers}) => {
     maxPlayers,
   });
 }
+
+export const setGearPermissions = async ({universeId, enabled}) => {
+  return await request('PATCH', getFullUrl('develop', `/v1/universes/${universeId}/gear-permissions`), {
+    isEnabled: enabled,
+  });
+}
+
+export const setPlayable = async ({universeId, isPlayable}) => {
+  return await request('PATCH', getFullUrl('develop', `/v1/universes/${universeId}/playable`), {
+    isPlayable,
+  });
+}

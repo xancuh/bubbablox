@@ -114,7 +114,7 @@ $joinscript = [
     "SeleniumTestMode" => false,
     "UserId" => (int)$user['userId'],
     "SuperSafeChat" => false,
-    "CharacterAppearance" => "http://bs.zawg.ca/Asset/CharacterFetch.ashx?userId=" . $user['userId'],
+    "CharacterAppearance" => "http://bs.zawg.ca/Asset/CharacterFetch.ashx?userId=" . $user['userId'] . "&placeId=" . $placeId,
     "ClientTicket" => "",
     "GameId" => $placeId,
     "PlaceId" => $placeId,

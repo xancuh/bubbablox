@@ -112,3 +112,13 @@ public class SetMaxPlayerCountRequest
 {
     public int maxPlayers { get; set; }
 }
+
+public class SetGearPermissionRequest
+{
+    public bool isEnabled { get; set; }
+}
+
+public class SetPlayableRequest
+{
+    public bool isPlayable { get; set; }
+}

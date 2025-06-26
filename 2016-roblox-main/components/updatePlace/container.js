@@ -6,6 +6,7 @@ import {multiGetPlaceDetails} from "../../services/games";
 import Icon from "./components/icon";
 import UploadPlace from "./components/uploadPlace";
 import Access from "./components/access";
+import GearPermissions from "./components/gearperms";
 
 const Container = props => {
   const store = updatePlaceStore.useContainer();
@@ -54,8 +55,8 @@ const Container = props => {
     {
       name: 'Permissions',
       url: '#',
-      disabled: true,
-      el: () => null,
+      disabled: false,
+      el: () => <GearPermissions />,
     },
     {
       name: 'Version History',

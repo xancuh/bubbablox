@@ -93,4 +93,20 @@ public class DevelopControllerV1 : ControllerBase
         await services.assets.ValidatePermissions(place, safeUserSession.userId);
         await services.games.SetMaxPlayerCount(place, request.maxPlayers);
     }
+	
+	[HttpPatch("universes/{universeId:long}/gear-permissions")]
+	public async Task SetGearPermission(long universeId, [Required, FromBody] SetGearPermissionRequest request)
+	{
+		var place = await services.games.GetRootPlaceId(universeId);
+		await services.assets.ValidatePermissions(place, safeUserSession.userId);
+		await services.games.SetGearPermission(place, request.isEnabled);
+	}
+	
+	[HttpPatch("universes/{universeId:long}/playable")]
+	public async Task SetPlayabilityStatus(long universeId, [Required, FromBody] SetPlayableRequest request)
+	{
+		var place = await services.games.GetRootPlaceId(universeId);
+		await services.assets.ValidatePermissions(place, safeUserSession.userId);
+		await services.games.SetPlayable(place, request.isPlayable);
+    }
 }
