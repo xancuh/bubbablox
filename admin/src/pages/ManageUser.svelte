@@ -209,7 +209,7 @@
 				</div>
 				<ManageTextContent userId={userId} />
 				
-				{#if rank.is("owner")}
+				{#if rank.hasPermission("SetPermissions")}
 					<ManagePermissions userId={userId} />
 				{/if}
 			</div>

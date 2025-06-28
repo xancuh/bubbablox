@@ -11,14 +11,16 @@ const NewPositionModal = props => {
   const store = ExchangeStore.useContainer();
   const btnStyles = useButtonStyles();
   const [isMarketOrder, setIsMarketOrder] = useState(true);
-  const [rate, setRate] = useState(0);
-  const [amount, setAmount] = useState('');
+/*   const [rate, setRate] = useState(0); */
+  const [amount, setAmount] = useState(''); 
   const [currency, setCurrency] = useState(2);
   const [amountWanted, setAmountWanted] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [locked, setLocked] = useState(false);
-
-  useEffect(() => {
+  // why does this keep getting set to NaN?
+  //  idk tbh so just hard code for now
+  const rate = currency === 1 ? 10 : 0.1;
+/*   useEffect(() => {
     let amtInt = parseInt(amount, 10);
     let rawRate = amountWanted / amtInt;
     if (rawRate !== 0)
@@ -33,12 +35,13 @@ const NewPositionModal = props => {
       setRate(averageRate);
     }
   }, [store.statistics, isMarketOrder, currency]);
-
+  */
+  
   if (!store.newPositionVisible)
     return null;
 
   console.log('amt', amount, 'at rate', rate);
-  const estimatedReturn = Math.trunc(parseInt(amount, 10) * rate);
+  const estimatedReturn = amount ? Math.trunc(parseInt(amount, 10) * rate) : 0;
 
   return <OldModal title={store.isConvertMode ? 'Convert Currency' : 'Trade Currency'}>
     <table className='w-100'>

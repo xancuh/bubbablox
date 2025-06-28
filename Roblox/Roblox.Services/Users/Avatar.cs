@@ -397,8 +397,8 @@ public class AvatarService : ServiceBase, IService
             return 0;
         });
     }
-
-	private async Task<bool> ConfirmAssetSelectionIsOkForRender(IEnumerable<long> unknownAssetIds)
+	
+	private async Task<bool> ConfirmAssetSelectionIsOkForRender(long userId, IEnumerable<long> unknownAssetIds)
 	{
 		var assets = new AssetsService();
 		var assetIds = unknownAssetIds.ToList();
@@ -420,43 +420,43 @@ public class AvatarService : ServiceBase, IService
 		var head = 0;
 		var animations = 0;
 
-		// Track invalid assets
-		var invalidAssets = new List<string>();
-		var assetCounts = new Dictionary<Type, List<long>>();
+		// track bad assets
+		var invalid = new List<string>();
+		var assetstype = new Dictionary<Type, List<long>>();
 
 		foreach (var item in details)
 		{
-			if (!assetCounts.ContainsKey(item.assetType))
+			if (!assetstype.ContainsKey(item.assetType))
 			{
-				assetCounts[item.assetType] = new List<long>();
+				assetstype[item.assetType] = new List<long>();
 			}
-			assetCounts[item.assetType].Add(item.id);
+			assetstype[item.assetType].Add(item.id);
 
 			switch (item.assetType)
 			{
 				case Models.Assets.Type.TeeShirt:
 					tShirt++;
-					if (tShirt > 1) invalidAssets.Add($"Too many TeeShirts (limit 1) - Asset {item.id}");
+					if (tShirt > 1) invalid.Add($"too many T-Shirts (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Shirt:
 					shirt++;
-					if (shirt > 1) invalidAssets.Add($"Too many Shirts (limit 1) - Asset {item.id}");
+					if (shirt > 1) invalid.Add($"too many Shirts (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Pants:
 					pants++;
-					if (pants > 1) invalidAssets.Add($"Too many Pants (limit 1) - Asset {item.id}");
+					if (pants > 1) invalid.Add($"too many Pants (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Animation:
 					animations++;
-					if (animations > 1) invalidAssets.Add($"Too many Animations (limit 1) - Asset {item.id}");
+					if (animations > 1) invalid.Add($"too many Animations (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Gear:
 					gear++;
-					if (gear > 1) invalidAssets.Add($"Too many Gear items (limit 1) - Asset {item.id}");
+					if (gear > 1) invalid.Add($"too many Gears (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Face:
 					face++;
-					if (face > 1) invalidAssets.Add($"Too many Faces (limit 1) - Asset {item.id}");
+					if (face > 1) invalid.Add($"too many Faces (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Hat:
 				case Models.Assets.Type.FrontAccessory:
@@ -467,51 +467,69 @@ public class AvatarService : ServiceBase, IService
 				case Models.Assets.Type.WaistAccessory:
 				case Models.Assets.Type.FaceAccessory:
 					accessories++;
-					if (accessories > 6) invalidAssets.Add($"Too many Accessories (limit 6) - Asset {item.id}");
+					if (accessories > 6) invalid.Add($"too many Accessories (limit 6) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Head:
 					head++;
-					if (head > 1) invalidAssets.Add($"Too many Head items (limit 1) - Asset {item.id}");
+					if (head > 1) invalid.Add($"too many Heads (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.Torso:
 					torso++;
-					if (torso > 1) invalidAssets.Add($"Too many Torso items (limit 1) - Asset {item.id}");
+					if (torso > 1) invalid.Add($"too many Torso accessories (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.LeftArm:
 					leftArm++;
-					if (leftArm > 1) invalidAssets.Add($"Too many LeftArm items (limit 1) - Asset {item.id}");
+					if (leftArm > 1) invalid.Add($"too many left arms (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.RightArm:
 					rightArm++;
-					if (rightArm > 1) invalidAssets.Add($"Too many RightArm items (limit 1) - Asset {item.id}");
+					if (rightArm > 1) invalid.Add($"too many right arms (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.LeftLeg:
 					leftLeg++;
-					if (leftLeg > 1) invalidAssets.Add($"Too many LeftLeg items (limit 1) - Asset {item.id}");
+					if (leftLeg > 1) invalid.Add($"too many left legs (limit 1) - Asset {item.id}");
 					break;
 				case Models.Assets.Type.RightLeg:
 					rightLeg++;
-					if (rightLeg > 1) invalidAssets.Add($"Too many RightLeg items (limit 1) - Asset {item.id}");
+					if (rightLeg > 1) invalid.Add($"too many right legs (limit 1) - Asset {item.id}");
 					break;
 				default:
-					invalidAssets.Add($"Unexpected asset type: {item.assetType} - Asset {item.id}");
+					invalid.Add($"bad asset type: {item.assetType} - Asset {item.id}");
 					break;
 			}
 		}
 
-		// Check if we have any invalid assets
-		if (invalidAssets.Count > 0)
+		// send to webhook if any invalid cause people keep complaining and idek what it is so
+		// remove this later plz
+		if (invalid.Count > 0)
 		{
-			Console.WriteLine("Invalid assets:");
-			foreach (var invalid in invalidAssets)
+			try
 			{
-				Console.WriteLine(invalid);
+				using var http = new HttpClient();
+				var message = $"Bad assets for user {userId}:\n{string.Join("\n", invalid.Take(10))}";
+				if (invalid.Count > 10)
+				{
+					message += $"\n...and {invalid.Count - 10} more errors";
+				}
+
+				var payload = new
+				{
+					content = message
+				};
+				// try catch cause it wouldn't fucking send the message and i couldn't figure out WHY...
+				var json = System.Text.Json.JsonSerializer.Serialize(payload);
+				var content = new StringContent(json, Encoding.UTF8, "application/json");
+				
+				var response = await http.PostAsync(Roblox.Configuration.Webhook, content);
+				
+				if (!response.IsSuccessStatusCode)
+				{
+					Console.WriteLine($"wh failed, bad status");
+				}
 			}
-			
-			Console.WriteLine("Assets invalid:");
-			foreach (var kvp in assetCounts)
+			catch (Exception ex)
 			{
-				Console.WriteLine($"{kvp.Key}: {kvp.Value.Count} items - [{string.Join(", ", kvp.Value)}]");
+				Console.WriteLine($"wh exception: {ex}");
 			}
 			
 			return false;
@@ -578,7 +596,7 @@ public class AvatarService : ServiceBase, IService
             assetIds = (await FilterAssetsForRender(userId, assetIds)).ToList();
         }
 
-        var assetsOk = await ConfirmAssetSelectionIsOkForRender(assetIds);
+        var assetsOk = await ConfirmAssetSelectionIsOkForRender(userId, assetIds);
         if (!assetsOk)
             throw new RobloxException(400, 0, "One or more assets are invalid");
         // Now, update the avatar. This returns a hash

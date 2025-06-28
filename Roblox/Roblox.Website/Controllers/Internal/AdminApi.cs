@@ -187,8 +187,8 @@ public class AdminApiController : ControllerBase
     [HttpPost("staff/permissions"), StaffFilter(Access.SetPermissions)]
     public async Task SetUserPermissions(long userId, Access permission)
     {
-        if (!StaffFilter.IsOwner(userSession.userId))
-            throw new Exception("InternalServerError");
+/*         if (!StaffFilter.IsOwner(userSession.userId))
+            throw new Exception("InternalServerError"); */
 
         await services.users.AddStaffPermission(userId, permission);
     }
@@ -2729,7 +2729,7 @@ Thank you for your understanding,
 			});
 	}
 
-    [HttpPost("bundle/copy-from-roblox"), StaffFilter(Access.CreateBundleCopiedFromRoblox)]
+	[HttpPost("bundle/copy-from-roblox"), StaffFilter(Access.CreateBundleCopiedFromRoblox)]
     public async Task<dynamic> CopyBundle(long bundleId)
     {
         var details = await services.robloxApi.GetBundle(bundleId);
