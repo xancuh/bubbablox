@@ -276,8 +276,8 @@ public class AdminApiController : ControllerBase
 		if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Length < 4 || request.Code.Length > 50)
 			throw new StaffException("Code must be between 4-50 characters");
 		
-		if (request.AssetId == null && request.RobuxAmount == null)
-			throw new StaffException("Must specify either AssetId or RobuxAmount");
+		if (request.AssetId == null && request.Robux == null)
+			throw new StaffException("Must specify either AssetId or Robux");
 		
 		if (request.AssetId != null)
 		{
@@ -291,17 +291,17 @@ public class AdminApiController : ControllerBase
 			}
 		}
 		
-		if (request.RobuxAmount is < 0 or > 1000000)
+		if (request.Robux is < 0 or > 1000000)
 			throw new StaffException("Robux amount must be between 0-1,000,000");
 
 		if (request.MaxUses is < 1 or > 1000000)
 			throw new StaffException("Max uses must be between 1-1,000,000");
 
-		var existingCode = await db.QuerySingleOrDefaultAsync<Total>(
+		var existing = await db.QuerySingleOrDefaultAsync<Total>(
 			"SELECT COUNT(*) as total FROM promocodes WHERE code = :code",
 			new { code = request.Code.ToUpper() });
 		
-		if (existingCode.total > 0)
+		if (existing.total > 0)
 			throw new StaffException("Promocode already exists");
 
 		DateTime? expiresAt = null;
@@ -324,18 +324,18 @@ public class AdminApiController : ControllerBase
 
 		var id = await db.ExecuteScalarAsync<int>(
 			@"INSERT INTO promocodes 
-			  (code, asset_id, robux_amount, expires_at, max_uses, is_active) 
+			  (code, asset_id, robux, expires_at, maxuses, active) 
 			  VALUES 
-			  (:code, :asset_id, :robux_amount, :expires_at, :max_uses, :is_active) 
+			  (@code, @asset_id, @robux, @expires_at, @maxuses, @active) 
 			  RETURNING id",
 			new
 			{
 				code = request.Code.ToUpper(),
 				asset_id = request.AssetId,
-				robux_amount = request.RobuxAmount,
+				robux = request.Robux,
 				expires_at = expiresAt,
-				max_uses = request.MaxUses,
-				is_active = request.IsActive
+				maxuses = request.MaxUses,
+				active = request.IsActive
 			});
 
 		return new
@@ -354,26 +354,26 @@ public class AdminApiController : ControllerBase
 	}
 
 	[HttpGet("promocodes/redemptions"), StaffFilter(Access.GiveUserItem)]
-	public async Task<IEnumerable<PCREntry>> GetRedemptions(int promoCodeId, int limit = 1000000, int offset = 0)
+	public async Task<IEnumerable<PCREntry>> GetRedemptions(int promocodeID, int limit = 1000000, int offset = 0)
 	{
 		return await db.QueryAsync<PCREntry>(
 			@"SELECT pr.*, u.username 
 			  FROM promocode_redemptions pr
 			  LEFT JOIN ""user"" u ON u.id = pr.user_id
-			  WHERE pr.promocode_id = :promoCodeId
+			  WHERE pr.promocode = :promocodeID
 			  ORDER BY pr.redeemed_at DESC
 			  LIMIT :limit OFFSET :offset",
-			new { promoCodeId, limit, offset });
+			new { promocodeID, limit, offset });
 	}
 
 	[HttpPost("promocodes/toggle-active"), StaffFilter(Access.GiveUserItem)]
 	public async Task<dynamic> TogglePromoCodeActive([FromBody] TogPC request)
 	{
 		var affected = await db.ExecuteAsync(
-			"UPDATE promocodes SET is_active = @isActive WHERE id = @promoCodeId",
+			"UPDATE promocodes SET active = @active WHERE id = @promocodeID",
 			new { 
-				promoCodeId = request.promoCodeId, 
-				isActive = request.isActive 
+				promocodeID = request.promocodeID, 
+				active = request.isActive 
 			});
 
 		if (affected == 0)
@@ -384,7 +384,7 @@ public class AdminApiController : ControllerBase
 		return new
 		{
 			success = true,
-			message = $"Promocode {request.promoCodeId} updated to {(request.isActive ? "active" : "inactive")}"
+			message = $"Promocode {request.promocodeID} updated to {(request.isActive ? "active" : "inactive")}"
 		};
 	}
 	
@@ -394,18 +394,18 @@ public class AdminApiController : ControllerBase
 		[FromBody] DeletePC request,
 		[FromServices] NpgsqlConnection db)
 	{
-		if (request.promoCodeId <= 0)
+		if (request.promocodeID <= 0)
 		{
 			throw new StaffException("Invalid promocode");
 		}
 
 		try
 		{
-			var existingCode = await db.QuerySingleOrDefaultAsync<PCEntry>(
+			var existing = await db.QuerySingleOrDefaultAsync<PCEntry>(
 				"SELECT * FROM promocodes WHERE id = @id",
-				new { id = request.promoCodeId });
+				new { id = request.promocodeID });
 
-			if (existingCode == null)
+			if (existing == null)
 			{
 				throw new StaffException("Promocode not found");
 			}
@@ -414,13 +414,13 @@ public class AdminApiController : ControllerBase
 			try
 			{
 				await db.ExecuteAsync(
-					"DELETE FROM promocode_redemptions WHERE promocode_id = @id",
-					new { id = request.promoCodeId },
+					"DELETE FROM promocode_redemptions WHERE promocode = @id",
+					new { id = request.promocodeID },
 					transaction);
 
 				await db.ExecuteAsync(
 					"DELETE FROM promocodes WHERE id = @id",
-					new { id = request.promoCodeId },
+					new { id = request.promocodeID },
 					transaction);
 
 				await transaction.CommitAsync();
@@ -1339,7 +1339,7 @@ public class AdminApiController : ControllerBase
 		foreach (var ip in duplicate)
 		{
 			var possiblealts = await db.QueryAsync<dynamic>(
-				@"SELECT u.id as user_id, u.username, u.status, uhi.hashed_ip, uhi.last_seen 
+				@"SELECT u.id as user_id, u.username, u.status, uhi.block_status, uhi.hashed_ip, uhi.last_seen 
 				  FROM user_hashed_ips uhi
 				  JOIN ""user"" u ON uhi.user_id = u.id
 				  WHERE uhi.hashed_ip = @hashed_ip
@@ -3174,7 +3174,7 @@ Thank you for your understanding,
 		}
 		catch (Exception ex)
 		{
-			Writer.Info(LogGroup.AdminApi, $"Copy failed: {ex}");
+			Writer.Info(LogGroup.AdminApi, $"(If this says 429 (Too Many Requests), then just wait a few minutes then try again.) Copy failed: {ex}");
 			throw new StaffException($"Copy failed: {ex.Message}");
 		}
 		finally
@@ -4001,26 +4001,26 @@ Thank you for your understanding,
         var validGroupStatus = groupStatus.Count(c => c.created_at > lastClock);
         const int robuxMultiplier = 5;
 
-        var robuxAmount = (validComments + validForumPosts + validWall + validStatus + validGroupStatus);
-        if (robuxAmount == 0)
+        var Robux = (validComments + validForumPosts + validWall + validStatus + validGroupStatus);
+        if (Robux == 0)
             return new
             {
-                robuxAmount,
+                Robux,
             };
         
-        robuxAmount *= robuxMultiplier;
+        Robux *= robuxMultiplier;
         
-        if (robuxAmount > 5000)
+        if (Robux > 5000)
         {
-            robuxAmount = 5000;
+            Robux = 5000;
         }
 
-        await services.economy.IncrementCurrency(userSession.userId, CurrencyType.Robux, robuxAmount);
+        await services.economy.IncrementCurrency(userSession.userId, CurrencyType.Robux, Robux);
         await services.users.InsertAsync("user_transaction", new
         {
             type = PurchaseType.Commission,
             currency_type = CurrencyType.Robux,
-            amount = robuxAmount,
+            amount = Robux,
             // details
             sub_type = TransactionSubType.StaffTextModeration,
             // user data
@@ -4030,7 +4030,7 @@ Thank you for your understanding,
         
         return new
         {
-            robuxAmount,
+            Robux,
         };
     }
 
@@ -4042,13 +4042,13 @@ Thank you for your understanding,
 
     private async Task RewardForReportReview()
     {
-        const int robuxAmount = 25;
-        await services.economy.IncrementCurrency(userSession.userId, CurrencyType.Robux, robuxAmount);
+        const int Robux = 25;
+        await services.economy.IncrementCurrency(userSession.userId, CurrencyType.Robux, Robux);
         await services.users.InsertAsync("user_transaction", new
         {
             type = PurchaseType.Commission,
             currency_type = CurrencyType.Robux,
-            amount = robuxAmount,
+            amount = Robux,
             // details
             sub_type = TransactionSubType.StaffReportReview,
             // user data

@@ -80,8 +80,8 @@ local HEAD_MOUNT_THICKNESS_MULTIPLIER = 0.25
 local TELEPORT = {
 	MODE_ENABLED = true,
 
-	ARC_COLOR_GOOD = fromLinearRGB(Color3.fromRGB(0, 162, 255)),
-	ARC_COLOR_BAD = fromLinearRGB(Color3.fromRGB(253, 68, 72)),
+	ARC_COLOR_GOOD = Color3.new(0, 0.635, 1),
+	ARC_COLOR_BAD = Color3.new(0.992, 0.267, 0.282),
 	ARC_THICKNESS = 0.05,
 
 	PLOP_GOOD = "rbxasset://textures/ui/VR/VRPointerDiscBlue.png",

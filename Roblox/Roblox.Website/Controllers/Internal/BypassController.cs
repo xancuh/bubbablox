@@ -201,6 +201,7 @@ namespace Roblox.Website.Controllers
 					}
 					catch (RecordNotFoundException)
 					{		
+						// i HATE HTTP HEADERS AND PROXIES!!!!!!
 						var pxyurl = $"{Roblox.Configuration.GSUrl}/asset/roblox/?id={assetId}";
 
 						using var httpClient = new HttpClient();
@@ -2390,24 +2391,24 @@ namespace Roblox.Website.Controllers
 			code = code.Trim().ToUpper();
 			var userId = userSession.userId;
 
-			PromoCodeEntry promoCode;
+			PromoCodeEntry promocode;
 			try
 			{
-				promoCode = await db.QuerySingleOrDefaultAsync<PromoCodeEntry>(
+				promocode = await db.QuerySingleOrDefaultAsync<PromoCodeEntry>(
 					"SELECT * FROM promocodes WHERE code = @code",
 					new { code });
 
-				if (promoCode == null)
+				if (promocode == null)
 				{
 					throw new RobloxException(400, 0, "This promocode does not exist");
 				}
 
 				var currentUtcTime = DateTime.UtcNow;
-				var ExpiresAtUtc = promoCode.Expires_at.HasValue 
-					? DateTime.SpecifyKind(promoCode.Expires_at.Value, DateTimeKind.Utc)
+				var ExpiresAtUtc = promocode.expires_at.HasValue 
+					? DateTime.SpecifyKind(promocode.expires_at.Value, DateTimeKind.Utc)
 					: (DateTime?)null;
 
-				if (!promoCode.is_active)
+				if (!promocode.active)
 				{
 					throw new RobloxException(400, 0, "This promocode is no longer active");
 				}
@@ -2420,19 +2421,19 @@ namespace Roblox.Website.Controllers
 						"This promocode has expired");
 				}
 
-				if (promoCode.Expires_at.HasValue && promoCode.Expires_at.Value < DateTime.UtcNow)
+				if (promocode.expires_at.HasValue && promocode.expires_at.Value < DateTime.UtcNow)
 				{
 					throw new RobloxException(400, 0, "This promocode has expired");
 				}
 
-				if (promoCode.max_uses.HasValue && promoCode.use_count >= promoCode.max_uses.Value)
+				if (promocode.uses >= promocode.maxuses)
 				{
 					throw new RobloxException(400, 0, "This promocode has reached it's maximum redemptions");
 				}
 
 				var hasRedeemed = await db.ExecuteScalarAsync<int>(
-					"SELECT COUNT(*) FROM promocode_redemptions WHERE user_id = @userId AND promocode_id = @promoCodeId",
-					new { userId, promoCodeId = promoCode.id }) > 0;
+					"SELECT COUNT(*) FROM promocode_redemptions WHERE user_id = @userId AND promocode = @promocodeID",
+					new { userId, promocodeID = promocode.id }) > 0;
 
 				if (hasRedeemed)
 				{
@@ -2443,35 +2444,35 @@ namespace Roblox.Website.Controllers
 				try
 				{
 					await db.ExecuteAsync(
-						"UPDATE promocodes SET use_count = use_count + 1 WHERE id = @id",
-						new { id = promoCode.id },
+						"UPDATE promocodes SET uses = uses + 1 WHERE id = @id",
+						new { id = promocode.id },
 						transaction);
 
 					await db.ExecuteAsync(
-						"INSERT INTO promocode_redemptions (promocode_id, user_id, asset_id, robux_amount) " +
-						"VALUES (@promoCodeId, @userId, @assetId, @robuxAmount)",
+						"INSERT INTO promocode_redemptions (promocode, user_id, asset_id, robux) " +
+						"VALUES (@promocodeID, @userId, @assetId, @robux)",
 						new
 						{
-							promoCodeId = promoCode.id,
+							promocodeID = promocode.id,
 							userId,
-							assetId = promoCode.asset_id,
-							robuxAmount = promoCode.robux_amount
+							assetId = promocode.asset_id,
+							robux = promocode.robux
 						},
 						transaction);
 
-					if (promoCode.asset_id.HasValue)
+					if (promocode.asset_id.HasValue)
 					{
 						await db.ExecuteAsync(
 							"INSERT INTO user_asset (user_id, asset_id) VALUES (@userId, @assetId)",
-							new { userId, assetId = promoCode.asset_id.Value },
+							new { userId, assetId = promocode.asset_id.Value },
 							transaction);
 					}
 
-					if (promoCode.robux_amount.HasValue && promoCode.robux_amount.Value > 0)
+					if (promocode.robux.HasValue && promocode.robux.Value > 0)
 					{
 						await db.ExecuteAsync(
 							"UPDATE user_economy SET balance_robux = balance_robux + @amount WHERE user_id = @userId",
-							new { userId, amount = promoCode.robux_amount.Value },
+							new { userId, amount = promocode.robux.Value },
 							transaction);
 					}
 
@@ -2483,13 +2484,13 @@ namespace Roblox.Website.Controllers
 					throw;
 				}
 
-				string assetName = null;
-				if (promoCode.asset_id.HasValue)
+				string name = null;
+				if (promocode.asset_id.HasValue)
 				{
 					try
 					{
-						var assetInfo = await services.assets.GetAssetCatalogInfo(promoCode.asset_id.Value);
-						assetName = assetInfo.name;
+						var assetInfo = await services.assets.GetAssetCatalogInfo(promocode.asset_id.Value);
+						name = assetInfo.name;
 					}
 					catch { /* ignore */ }
 				}
@@ -2498,9 +2499,9 @@ namespace Roblox.Website.Controllers
 				{
 					success = true,
 					message = "Promocode redeemed successfully!",
-					assetId = promoCode.asset_id,
-					assetName,
-					robuxAmount = promoCode.robux_amount
+					assetId = promocode.asset_id,
+					name,
+					robux = promocode.robux
 				};
 			}
 			finally

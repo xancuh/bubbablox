@@ -168,16 +168,7 @@ public class CsrfMiddleware : ControllerServicesExtended
 public async Task InvokeAsync(HttpContext ctx)
 {
     var csrfTimer = new MiddlewareTimer(ctx, "c");
-
-    #if DEBUG
-    var swag = ctx.Request.Headers.Referer;
-    if (swag.ToString().EndsWith("/swagger/index.html"))
-    {
-        await _next(ctx);
-        return;
-    }
-    #endif
-
+	
     var pathLower = ctx.Request.Path.ToString().ToLower();
     if (pathLower.EndsWith("/"))
     {

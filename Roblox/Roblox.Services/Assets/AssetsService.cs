@@ -744,13 +744,17 @@ public class AssetsService : ServiceBase, IService
 			case Type.Head:
                 thumbRequests.Add(CreateHeadThumbnail(assetId, cancellationToken));
                 break;
-				
+									
+		    case Type.Place:
+				thumbRequests.Add(CreateGameThumbnail(assetId, cancellationToken));
+				break;
+			
 			case Type.Mesh:
 				thumbRequests.Add(CreateMeshThumbnail(assetId, cancellationToken));
                 break;
 
 			case Type.Hat:
-			case Type.Place:
+			//case Type.Place:
 			case Type.Gear:
 			//case Type.Mesh:
 			case Type.HairAccessory:

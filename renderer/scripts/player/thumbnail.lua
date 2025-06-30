@@ -1,7 +1,7 @@
  local jobId = "InsertJobIdHere";
 local userId = 65789275746246;
 local mode = "R6";
-local baseURL = "http://bb.zawg.ca";
+local baseURL = "http://localhost";
 local uploadURL = "UPLOAD_URL_HERE";
 
 -- services
@@ -20,10 +20,10 @@ game:GetService('ThumbnailGenerator').GraphicsMode = 2;
 HttpService.HttpEnabled = true;
 ScriptContext.ScriptsDisabled = true;
 Lighting.Outlines = false;
-ContentProvider:SetBaseUrl("http://bb.zawg.ca/");
+ContentProvider:SetBaseUrl("http://localhost/");
 
-Insert:SetAssetUrl("http://bb.zawg.ca/asset/?id=%d");
-Insert:SetAssetVersionUrl("http://bb.zawg.ca/Asset/?assetversionid=%d");
+Insert:SetAssetUrl("http://localhost/asset/?id=%d");
+Insert:SetAssetVersionUrl("http://localhost/Asset/?assetversionid=%d");
 
 local function applyMesh(Player, children, limb)
     print("[DEBUG] applying mesh to:", limb);

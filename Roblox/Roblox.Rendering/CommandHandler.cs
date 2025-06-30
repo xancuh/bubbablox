@@ -44,7 +44,7 @@ namespace Roblox.Rendering
 
                     var msg = Encoding.UTF8.GetString(memory.Memory.Span.Slice(0, result.Count));
 
-                    Console.WriteLine("Received GS message, result={0}", msg.Substring(0,100)+"...");
+                    Console.WriteLine("Received WS message, result={0}", msg.Substring(0,100)+"...");
                     var decoded = JsonSerializer.Deserialize<RenderResponse<string>>(msg);
                     if (decoded == null)
                     {

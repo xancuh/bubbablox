@@ -1,2 +1,2 @@
-cd C:\Users\lannu\Desktop\ecs\services\Roblox\Roblox.Website
+cd C:\Users\Admin\Desktop\Revival\ecsr\ecsrev-main\services\Roblox\Roblox.Website
 dotnet run --configuration Release

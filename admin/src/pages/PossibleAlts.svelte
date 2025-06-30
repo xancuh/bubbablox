@@ -11,6 +11,8 @@
 				username: string;
 				hashed_ip: string;
 				last_seen: string;
+				status: number;
+				block_status: number;
 			}[];
 		};
 	};
@@ -25,6 +27,23 @@
 			.finally(() => {
 				loading = false;
 			});
+	}
+
+	function getVPN(user1, user2) {
+		const one = user1.block_status;
+		const two = user2.block_status;
+		
+		if (one === 0 && two === 0) return "No";
+		if (one === 1 && two === 1) return "Yes (both)";
+		if (one === 2 && two === 2) return "Unsure (both)";
+		
+		let result = [];
+		if (one === 1) result.push(`Yes for ${user1.username}`);
+		if (one === 2) result.push(`Unsure for ${user1.username}`);
+		if (two === 1) result.push(`Yes for ${user2.username}`);
+		if (two === 2) result.push(`Unsure for ${user2.username}`);
+		
+		return result.join(", ");
 	}
 </script>
 
@@ -58,30 +77,28 @@
 										<th>User 1</th>
 										<th>User 2</th>
 										<th>Last Seen</th>
+										<th>VPN?</th>
 									</tr>
 								</thead>
 								<tbody>
 									{#each Object.values(ipdata) as data}
-										{#if data.users && data.users.length > 0}
+										{#if data.users && data.users.length >= 2}
 											<tr>
 												<td>{data.users[0].hashed_ip.slice(0, 10)}...</td>
 												<td>
-													{#if data.users[0]}
-														<a use:link href={`/admin/manage-user/${data.users[0].user_id}`}>
-															{data.users[0].username} (ID: {data.users[0].user_id})
-														</a>
-													{/if}
+													<a use:link href={`/admin/manage-user/${data.users[0].user_id}`}>
+														{data.users[0].username} (ID: {data.users[0].user_id})
+													</a>
 												</td>
 												<td>
-													{#if data.users[1]}
-														<a use:link href={`/admin/manage-user/${data.users[1].user_id}`}>
-															{data.users[1].username} (ID: {data.users[1].user_id})
-														</a>
-													{/if}
+													<a use:link href={`/admin/manage-user/${data.users[1].user_id}`}>
+														{data.users[1].username} (ID: {data.users[1].user_id})
+													</a>
 												</td>
 												<td>
 													{new Date(data.users[0].last_seen).toLocaleString()}
 												</td>
+												<td>{getVPN(data.users[0], data.users[1])}</td>
 											</tr>
 										{/if}
 									{/each}

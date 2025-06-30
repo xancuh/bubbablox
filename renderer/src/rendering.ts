@@ -47,7 +47,8 @@ export const resolutionMultiplier = {
 	export const getResult = (key: string, upscaleAmount: number): Promise<any> => {
 	  return new Promise((res, rej) => {
 		const timeout = setTimeout(() => {
-		  rej('Timeout waiting for thumbnail result');
+		  unregister();
+		  rej(new Error('timeout waiting for thumb'));
 		}, 2 * 60 * 1000);
 
 		const unregister = registerCallback(key, async (data) => {
@@ -58,23 +59,28 @@ export const resolutionMultiplier = {
 			if (typeof data.thumbnail === 'string') {
 			  const originalImage = await sharp(Buffer.from(data.thumbnail, 'base64')).metadata();
 			  if (typeof originalImage.width !== 'number' || typeof originalImage.height !== 'number') {
-				throw new Error('Invalid image dimensions');
+				throw new Error('bad image dimensions');
 			  }
 
-		  const image = await sharp(Buffer.from(data.thumbnail, 'base64'))
-			.resize(
-			  Math.trunc(originalImage.width / upscaleAmount),
-			  Math.trunc(originalImage.height / upscaleAmount)
-			)
-			.png({ compressionLevel: 9, quality: 99, effort: 10 })
-			.toBuffer();
+			  const image = await sharp(Buffer.from(data.thumbnail, 'base64'))
+				.resize(
+				  Math.trunc(originalImage.width / upscaleAmount),
+				  Math.trunc(originalImage.height / upscaleAmount)
+				)
+				.png({ compressionLevel: 9, quality: 99, effort: 10 })
+				.toBuffer();
 
-		  data.thumbnail = image.toString('base64');
-		}
-		res(data);
-	  } catch (error) {
-		rej(error);
-	  }
-	});
-  });
-}
+			  data.thumbnail = image.toString('base64');
+			}
+			res(data);
+		  } catch (error) {
+			rej(error);
+		  }
+		});
+
+		process.on('exit', () => {
+		  clearTimeout(timeout);
+		  unregister();
+		});
+	  });
+	};

@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Http;
+using System.Collections.Concurrent;
 using JWT;
 using JWT.Algorithms;
 using JWT.Exceptions;
@@ -17,6 +19,7 @@ using Roblox.Website.Controllers;
 using Roblox.Website.Filters;
 using Roblox.Website.Lib;
 using Roblox.Libraries.Password;
+using Roblox.Website.WebsiteModels.Session.IP;
 using ServiceProvider = Roblox.Services.ServiceProvider;
 
 namespace Roblox.Website.Middleware;
@@ -94,6 +97,10 @@ public class SessionMiddleware
         await _next(ctx);
     }
 	
+	private static readonly HttpClient http = new HttpClient();
+    private static readonly ConcurrentDictionary<string, IPCacheEntry> IPCache = new();
+    private static readonly TimeSpan IPCacheDuration = TimeSpan.FromMinutes(30);
+	
 	// is there a better way to do this? cause argon makes a random salt and i can't do anything about that
 	private static string HashIp(string IP)
 	{
@@ -104,7 +111,101 @@ public class SessionMiddleware
 		
 		return BitConverter.ToString(hashbytes).Replace("-", "").ToLower();
 	}
+	
+	private async Task UpdateIPCacheAsync(string ip)
+    {
+        try
+        {
+            var blockstats = await GetIPBlockStats(ip);
+            var hashedIP = HashIp(ip);
 
+            var newcache = new IPCacheEntry 
+            { 
+                hashedIP = hashedIP,
+                blockstats = blockstats,
+                LastUpdated = DateTime.UtcNow 
+            };
+
+            IPCache.AddOrUpdate(ip, newcache, (_, _) => newcache);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"error updating IP cache for some reason: {ex.Message}");
+        }
+    }
+	
+	// TODO: Remove writeline stuff later cause it was just seeing how often 429s are served
+	private async Task<int> GetIPBlockStats(string ip)
+	{
+		int retries = 2;
+		int delay = 7500;
+		
+		for (int attempt = 1; attempt <= retries; attempt++)
+		{
+			try
+			{
+				Console.WriteLine($"attempt {attempt} of getting IP stats");
+				var request = new HttpRequestMessage(HttpMethod.Get, $"http://v2.api.iphub.info/ip/{ip}");
+				request.Headers.Add("X-Key", Roblox.Configuration.IPHubApiKey);
+				var response = await http.SendAsync(request);
+				
+				if ((int)response.StatusCode == 429)
+				{
+					Console.WriteLine($"got 429 (attempt {attempt})");
+					if (attempt < retries)
+					{
+						Console.WriteLine($"waiting {delay}ms before retrying");
+						await Task.Delay(delay);
+						continue;
+					}
+				}
+				
+				response.EnsureSuccessStatusCode();
+				
+				var content = await response.Content.ReadAsStringAsync();
+				var ipInfo = JsonSerializer.Deserialize<IPHubRes>(content);
+				Console.WriteLine($"got IP stats successfully");
+				return ipInfo?.block ?? 0;
+			}
+			catch (HttpRequestException httpEx) when (httpEx.StatusCode == (System.Net.HttpStatusCode)429 && attempt < retries)
+			{
+				Console.WriteLine($"429 on attempt {attempt}");
+				Console.WriteLine($"waiting {delay}ms before retrying");
+				await Task.Delay(delay);
+				continue;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"attempt {attempt} failed");
+				if (attempt == retries)
+				{
+					Console.WriteLine("max retries reached, returning 0");
+					return 0;
+				}
+			}
+		}
+		
+		Console.WriteLine("all attempts completed without success, returning 0");
+		return 0;
+	}
+
+    private async Task<string> GetHashedIP(string ip)
+    {
+        if (IPCache.TryGetValue(ip, out var cacheEntry))
+        {
+            if (DateTime.UtcNow - cacheEntry.LastUpdated > IPCacheDuration)
+            {
+                _ = Task.Run(() => UpdateIPCacheAsync(ip));
+            }
+            return cacheEntry.hashedIP;
+        }
+
+        // if not in cache just cache it and update
+        var hashedIP = HashIp(ip);
+        _ = Task.Run(() => UpdateIPCacheAsync(ip));
+        return hashedIP;
+    }
+	
 	public async Task InvokeAsync(HttpContext ctx)
 	{
 		var authTimer = new MiddlewareTimer(ctx, "au");
@@ -130,15 +231,34 @@ public class SessionMiddleware
 						using var accountInformation = ServiceProvider.GetOrCreate<AccountInformationService>();
 						
 						UserInfo userInfo;
-						try
-						{
-							var sessResult = await users.GetSessionById(decodedResult.sessionId);
-							userInfo = await users.GetUserById(sessResult.userId);
-													
+                        try
+                        {
+                            var sessResult = await users.GetSessionById(decodedResult.sessionId);
+                            userInfo = await users.GetUserById(sessResult.userId);
+                                                    
 							var IP = ControllerBase.GetRequesterIpRaw(ctx);
-							var IPHash = HashIp(IP);
-							await users.UpdateUserHashedIp(userInfo.userId, IPHash);
-						}
+							var hashed = await GetHashedIP(IP);
+
+							var cache = IPCache.TryGetValue(IP, out var entry) ? entry : null;
+							var blockstats = cache?.blockstats ?? 0;
+
+                            var hash = await users.GetUserHashedIp(userInfo.userId);
+                            if (hash != hashed)
+                            {
+                                // do in background cause it likes to timeout
+                                _ = Task.Run(async () => 
+                                {
+                                    try 
+                                    {
+                                        await users.UpdateUserHashedIp(userInfo.userId, hashed, blockstats);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"error updating IP hash: {ex.Message}");
+                                    }
+                                });
+                            }
+                        }
 						catch (RecordNotFoundException)
 						{
 							authTimer.Stop();

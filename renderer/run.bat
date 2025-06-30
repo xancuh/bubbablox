@@ -1,2 +1,2 @@
-cd "C:\Users\harry\Desktop\ecsr\ecsrev-main\services\game-server"
+cd "C:\Users\Admin\Desktop\Revival\ecsr\ecsrev-main\services\renderer"
 npm run start

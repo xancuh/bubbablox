@@ -147,7 +147,7 @@ $sources = [
             "User-Agent: Roblox/WinInet",
             "Accept: */*",
             "Accept-Encoding: gzip, deflate, br",
-			"Cookie: YourRobloSecurityHere"
+			"Cookie: .ROBLOSECURITY=YourRobloSecurityHere"
         ]
     ],
     [

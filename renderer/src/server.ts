@@ -30,6 +30,15 @@ app.use((req, res, next) => {
 	next();
 });
 
+app.get('/api/ping', (req, res) => {
+    res.status(200).json(true).end();
+});
+
+app.get('/stop', (req, res) => {
+    res.status(200).send("Shut down.").end();
+    process.exit(0);
+});
+
 app.post('/api/public-method', (req, res, next) => {
 	const b = req.body;
 	console.log('[' + req.method + '] ' + req.url + ' - ' + b.method);

@@ -36,7 +36,7 @@
                                                 <img class="w-100 mx-auto" src="/thumbs/asset.ashx?assetId=@Model.Result.assetId"/>
                                             </a>
                                             <div class="card-body">
-                                                <p class="mb-0 fw-bolder text-truncate">@(Model.Result.assetName ?? "Unknown Item")</p>
+                                                <p class="mb-0 fw-bolder text-truncate">@(Model.Result.name ?? "Unknown Item")</p>
                                             </div>
                                         </div>
                                     </div>
@@ -44,7 +44,7 @@
                             </div>
                         }
                         
-                        @if (Model.Result.robuxAmount.HasValue)
+                        @if (Model.Result.robux.HasValue)
                         {
                             <div class="mt-3">
                                 <h4>You received:</h4>
@@ -55,7 +55,7 @@
                                                 <img class="w-100 mx-auto" src="@($"{Roblox.Configuration.BaseUrl}/UnsecuredContent/robux.png")" />
                                             </a>
                                             <div class="card-body">
-                                                <p class="mb-0 fw-bolder text-truncate">@Model.Result.robuxAmount.Value.ToString("N0") Robux</p>
+                                                <p class="mb-0 fw-bolder text-truncate">@Model.Result.robux.Value.ToString("N0") Robux</p>
                                             </div>
                                         </div>
                                     </div>

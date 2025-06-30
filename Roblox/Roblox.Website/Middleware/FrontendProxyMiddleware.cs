@@ -23,7 +23,6 @@ public class FrontendProxyMiddleware
     public static List<string> BypassUrls = new()
     {
         "/apisite/",
-        "/swagger/",
         "/api/",
         "/api/economy-chat/",
         // Razor Files

@@ -11,21 +11,22 @@ const getBaseUrl = () => {
   return config.publicRuntimeConfig.backend.baseUrl;
 }
 
+// No proxy regardless cause there's nothing for it anyway
 const getUrlWithProxy = (url) => {
   if (config.publicRuntimeConfig.backend.proxyEnabled)
     return '' + (url);
   return url;
 }
 
-const shouldRedirectToLogout = (path) => {
-  const noRedirectPaths = [
+const shouldRedirect = (path) => {
+  const noRedir = [
 /*     '/catalog',
     '/users',
     '/games', */
 	'/My/GroupAdmin.aspx'
   ];
   
-  return !noRedirectPaths.some(noRedirectPath => 
+  return !noRedir.some(noRedirectPath => 
     path.startsWith(noRedirectPath)
   );
 }
@@ -56,16 +57,16 @@ const request = async (method, url, data) => {
     if (e.response) {
       let resp = e.response;
 
-      // HANDLE CSRF
+      // Handle CSRF
       if (resp.status === 403 && resp.headers['x-csrf-token']) {
         _csrf = resp.headers['x-csrf-token'];
         return await request(method, url, data);
       }
 
-/*       // UNAUTHORIZED
+/*    // Unauthorized
       if (resp.status === 401 && isBrowser) {
         const currentPath = window.location.pathname;
-        if (currentPath !== '/logout' && shouldRedirectToLogout(currentPath)) {
+        if (currentPath !== '/logout' && shouldRedirect(currentPath)) {
           Router.push('/logout');
         }
         throw new Error('Unauthorized');

@@ -101,7 +101,7 @@
 			<div class="col-12 mt-4">
 				<h3>Quick Config</h3>
 				
-				<button class="btn btn-primary mt-4" on:click={() => {
+					<button class="btn btn-primary mt-4" on:click={() => {
 					const permissions = [
 						'GetStats',
 						'GetAlert',
@@ -157,6 +157,93 @@
 						'DeleteUserStatus',
 						'GetUserCommentHistory',
 						'ManageFeatureFlags',
+						'GetUsersOnline',
+						'GetUsersInGame',
+						'GetUserTransactions',
+						'ResetUsername',
+						'ResetDescription',
+						'ManageApplications',
+						'ClearApplications',
+						'ManageInvites',
+						'GetGroupWall',
+						'DeleteGroupWallPost',
+						'GetAllAssetComments',
+						'GetAllUserStatuses',
+						'LockAndUnlockGroup',
+						'GetGroupStatus',
+						'DeleteGroupStatus',
+						'ResetGroup',
+						'LockForumThread',
+						'ManageReports',
+						'GetAllAssetOwners',
+						'GetDetailsFromThumbnail',
+						'GetGameServers',
+						'MakeItemLimited',
+						'CreateAssetCopiedFromRoblox',
+						'CreateBundleCopiedFromRoblox',
+						'GetSaleHistoryForAsset',
+						'RefundAndDeleteFirstPartyAssetSale',
+						'ForceApplication',
+						'SetPermissions'
+					];
+					quickConfig(permissions);
+				}}>Owner</button>
+				
+				<button class="btn btn-primary mt-4" on:click={() => {
+					const permissions = [
+						'GetStats',
+						'GetAlert',
+						'SetAlert',
+						'CreateUser',
+						'GetPendingGroupIcons',
+						'GetAssetModerationDetails',
+						'GetPendingModerationItems',
+						'GetPendingModerationGameIcons',
+						'SetGameIconModerationStatus',
+						'SetAssetModerationStatus',
+						'SetGroupIconModerationStatus',
+						'GetGroupManageInfo',
+						'GetUserJoinCount',
+						'GetUsersList',
+						'GetUserDetailed',
+						'UnbanUser',
+						'BanUser',
+						'GetUserModerationHistory',
+						'CreateMessage',
+						'GetAdminMessages',
+						'NullifyPassword',
+						'DestroyAllSessionsForUser',
+						'LockAccount',
+						'RegenerateAvatar',
+						'ResetAvatar',
+						'GetAdminLogs',
+						'GetUserBadges',
+						'GiveUserBadge',
+						'DeleteUserBadge',
+						'GiveUserRobux',
+						'GetUserCollectibles',
+						'RemoveUserItem',
+						'TrackItem',
+						'GiveUserItem',
+						'DeleteUser',
+						'GetPreviousUsernames',
+						'DeleteUsername',
+						'DeleteComment',
+						'DeleteForumPost',
+						'RequestAssetReRender',
+						'GetProductDetails',
+						'SetAssetProduct',
+						'CreateAsset',
+						'CreateClothingAsset',
+						'CopyClothingFromRoblox',
+						'CreateAssetVersion',
+						'MigrateAssetFromRoblox',
+						'CreateGameForUser',
+						'RequestWebsiteUpdate',
+						'RunLottery',
+						'GetUserStatusHistory',
+						'DeleteUserStatus',
+						'GetUserCommentHistory',
 						'GetUsersOnline',
 						'GetUsersInGame',
 						'GetUserTransactions',
@@ -265,4 +352,4 @@
 					quickConfig(permissions);
 				}}>Asset Copy (Non-Limited items)</button>
 			</div>
-</div>/*
+</div>

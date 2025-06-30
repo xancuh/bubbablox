@@ -228,6 +228,11 @@ public class EconomyControllerV2 : ControllerBase
         FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled, FeatureFlag.TradeCurrencyEnabled);
     }
 	
+	private void FeatureCheckMarket()
+    {
+        FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled, FeatureFlag.MarketEnabled);
+    }
+	
 	   private void FeatureCheckCurrencyExchange()
     {
         FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled, FeatureFlag.CurrencyExchangeEnabled);
@@ -236,7 +241,7 @@ public class EconomyControllerV2 : ControllerBase
     [HttpGet("currency-exchange/market/activity")]
     public async Task<dynamic> GetMarketActivity()
     {
-        FeatureCheckTradeCurrency();
+        FeatureCheckMarket();
         
         var robuxAverage = await services.currencyExchange.GetAverageRate(CurrencyType.Robux);
         var tixAverage = await services.currencyExchange.GetAverageRate(CurrencyType.Tickets);
@@ -289,7 +294,24 @@ public class EconomyControllerV2 : ControllerBase
 		FeatureCheckCurrencyExchange();
 
 		if (request.amount <= 0)
-			return BadRequest();
+			return StatusCode(500, new 
+				{
+					errors = new[] 
+					{
+						new { code = 0, message = "Invalid amount" }
+					}
+				});
+
+
+		if (request.amount < 10)
+			return StatusCode(500, new 
+				{
+					errors = new[] 
+					{
+						new { code = 0, message = "You cannot exchange less then 10 Robux/Tix." }
+					}
+				});
+
 
 		const decimal rate = 10m;
 		try
@@ -297,34 +319,53 @@ public class EconomyControllerV2 : ControllerBase
 			var balance = await services.economy.GetUserBalance(safeUserSession.userId);
 
 			if (request.sourceCurrency == CurrencyType.Robux && balance.robux < request.amount)
-				return BadRequest(new { message = "Insufficient Robux" });
+				return StatusCode(500, new 
+					{
+						errors = new[] 
+						{
+							new { code = 0, message = "Insufficient Robux" }
+						}
+					});
+
 				
 			if (request.sourceCurrency == CurrencyType.Tickets && balance.tickets < request.amount)
-				return BadRequest(new { message = "Insufficient Tickets" });
+				return StatusCode(500, new 
+					{
+						errors = new[] 
+						{
+							new { code = 0, message = "Insufficient Tickets" }
+						}
+					});
 
-			long newRobux = balance.robux;
-			long newTickets = balance.tickets;
+			long NewRobux = balance.robux;
+			long NewTix = balance.tickets;
 			
 			if (request.sourceCurrency == CurrencyType.Robux)
 			{
-				newRobux -= request.amount;
-				newTickets += (long)(request.amount * rate);
+				NewRobux -= request.amount;
+				NewTix += (long)(request.amount * rate);
 			}
 			else
 			{
-				newTickets -= request.amount;
-				newRobux += (long)(request.amount / rate);
+				NewTix -= request.amount;
+				NewRobux += (long)(request.amount / rate);
 			}
 
-			await using var lockHandle = await services.economy.AcquireEconomyLock(CreatorType.User, safeUserSession.userId);
+			await using var lockhandle = await services.economy.AcquireEconomyLock(CreatorType.User, safeUserSession.userId);
 			
-			await services.economy.SetUserBalance(safeUserSession.userId, newRobux, newTickets);
+			await services.economy.SetUserBalance(safeUserSession.userId, NewRobux, NewTix);
 			
 			return Ok();
 		}
 		catch (Exception ex)
 		{
-			 return StatusCode(500, new { message = $"Failed to exchange currency: {ex.Message}" });
+			return StatusCode(500, new 
+				{
+					errors = new[] 
+					{
+						new { code = 0, message = $"Failed to exchange currency: {ex.Message}" }
+					}
+				});
 		}
 	}
 

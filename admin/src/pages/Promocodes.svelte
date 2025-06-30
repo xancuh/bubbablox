@@ -32,21 +32,21 @@
         id: number;
         code: string;
         asset_id: number | null;
-        robux_amount: number | null;
+        robux: number | null;
         created_at: string;
         expires_at: string | null;
-        max_uses: number;
-        use_count: number;
-        is_active: boolean;
+        maxuses: number;
+        uses: number;
+        active: boolean;
     }
     
     interface PCREntry {
         id: number;
-        promocode_id: number;
+        promocode: number;
         user_id: number;
         redeemed_at: string;
         asset_id: number | null;
-        robux_amount: number | null;
+        robux: number | null;
         username: string;
     }
     
@@ -66,7 +66,7 @@
             promocodes = Array.isArray(response) ? response : response.data;
             
             if (!Array.isArray(promocodes)) {
-                throw new Error("Invalid response format from server");
+                throw new Error("Bad response format");
             }
         } catch (error) {
             console.error("Failed to load promocodes:", error);
@@ -77,7 +77,7 @@
         }
     }
 	
-	async function deletePromoCode(promoCodeId: number) {
+	async function deletepromocode(promocodeID: number) {
         if (!confirm('Are you sure you want to delete this promocode?')) {
             return;
         }
@@ -86,7 +86,7 @@
             loading = true;
             errormsg = undefined;
             await request.delete(`/promocodes/delete`, {
-                data: { promoCodeId }
+                data: { promocodeID }
             });
             successmsg = `Promocode deleted successfully`;
             await loadpromocodes();
@@ -100,11 +100,11 @@
         }
     }
 
-    async function loadRedemptions(promoCodeId: number) {
+    async function loadRedemptions(promocodeID: number) {
         try {
             redemptionLoading = true;
             errormsg = undefined;
-            const response = await request.get(`/promocodes/redemptions?promoCodeId=${promoCodeId}&limit=${limit}&offset=${offset}`);
+            const response = await request.get(`/promocodes/redemptions?promocodeID=${promocodeID}&limit=${limit}&offset=${offset}`);
 
             redemptions = Array.isArray(response) ? response : response.data;
             
@@ -112,7 +112,7 @@
                 throw new Error("Invalid response format from server");
             }
             
-            selectedpc = promocodes.find(pc => pc.id === promoCodeId) || null;
+            selectedpc = promocodes.find(pc => pc.id === promocodeID) || null;
         } catch (error) {
             console.error("Failed to load redemptions:", error);
             errormsg = error.message || "Failed to load redemptions";
@@ -122,12 +122,12 @@
         }
     }
     
-    async function toggleActive(promoCodeId: number, currentStatus: boolean) {
+    async function toggleActive(promocodeID: number, currentStatus: boolean) {
         try {
             loading = true;
             errormsg = undefined;
             await request.post(`/promocodes/toggle-active`, {
-                promoCodeId,
+                promocodeID,
                 isActive: !currentStatus
             });
             successmsg = `Promocode ${currentStatus ? 'deactivated' : 'activated'} successfully`;
@@ -140,7 +140,7 @@
         }
     }
 
-    async function createPromoCode() {
+    async function createpromocode() {
         errormsg = undefined;
         successmsg = undefined;
         loading = true;
@@ -271,7 +271,7 @@
         
         {#if activeTab === 'create'}
             <div class="col-12 mt-3">
-                <form on:submit|preventDefault={createPromoCode}>
+                <form on:submit|preventDefault={createpromocode}>
                     <div class="mb-3">
                         <label for="code" class="form-label">Promocode *</label>
                         <input 
@@ -428,7 +428,7 @@
 								</div>
 								<p class="mt-2">Loading promocodes...</p>
 							</div>
-						{:else if promocodes.filter(pc => !hidemaxed || pc.use_count < pc.max_uses).length === 0}
+						{:else if promocodes.filter(pc => !hidemaxed || pc.uses < pc.maxuses).length === 0}
 							<div class="alert alert-info">No promocodes found</div>
 						{:else}
 							<div class="table-responsive">
@@ -446,34 +446,34 @@
 										</tr>
 									</thead>
 									<tbody>
-										{#each promocodes.filter(pc => !hidemaxed || pc.use_count < pc.max_uses) as promoCode}
-                                            <tr class={selectedpc?.id === promoCode.id ? 'table-primary' : ''}>
-                                                <td>{promoCode.id}</td>
+										{#each promocodes.filter(pc => !hidemaxed || pc.uses < pc.maxuses) as promocode}
+                                            <tr class={selectedpc?.id === promocode.id ? 'table-primary' : ''}>
+                                                <td>{promocode.id}</td>
                                                 <td>
-                                                    <code>{promoCode.code}</code>
-                                                    {#if promoCode.use_count >= promoCode.max_uses}
+                                                    <code>{promocode.code}</code>
+                                                    {#if promocode.uses >= promocode.maxuses}
                                                         <span class="badge bg-danger ms-2">MAX</span>
                                                     {/if}
                                                 </td>
                                                 <td>
-                                                    {#if promoCode.asset_id}
-                                                        Asset #{promoCode.asset_id}
-                                                    {:else if promoCode.robux_amount}
-                                                        {promoCode.robux_amount} Robux
+                                                    {#if promocode.asset_id}
+                                                        Asset #{promocode.asset_id}
+                                                    {:else if promocode.robux}
+                                                        {promocode.robux} Robux
                                                     {/if}
                                                 </td>
-                                                <td>{promoCode.use_count}/{promoCode.max_uses}</td>
+                                                <td>{promocode.uses}/{promocode.maxuses}</td>
                                                 <td>
-                                                    {#if promoCode.is_active}
+                                                    {#if promocode.active}
                                                         <span class="badge bg-success">Active</span>
                                                     {:else}
                                                         <span class="badge bg-secondary">Inactive</span>
                                                     {/if}
                                                 </td>
-                                                <td>{new Date(promoCode.created_at).toLocaleString()}</td>
+                                                <td>{new Date(promocode.created_at).toLocaleString()}</td>
 												<td>
-													{#if promoCode.expires_at}
-														{formatTimeRemaining(promoCode.expires_at)}
+													{#if promocode.expires_at}
+														{formatTimeRemaining(promocode.expires_at)}
 													{:else}
 														Never
 													{/if}
@@ -482,23 +482,23 @@
 													<div class="btn-group btn-group-sm">
 														<button 
 															class="btn btn-primary"
-															on:click={() => loadRedemptions(promoCode.id)}
+															on:click={() => loadRedemptions(promocode.id)}
 															disabled={redemptionLoading}
 															title="View redemptions"
 														>
 															View
 														</button>
 														<button 
-															class="btn {promoCode.is_active ? 'btn-warning' : 'btn-success'}"
-															on:click={() => toggleActive(promoCode.id, promoCode.is_active)}
+															class="btn {promocode.active ? 'btn-warning' : 'btn-success'}"
+															on:click={() => toggleActive(promocode.id, promocode.active)}
 															disabled={loading}
-															title={promoCode.is_active ? 'Deactivate' : 'Activate'}
+															title={promocode.active ? 'Deactivate' : 'Activate'}
 														>
-															{promoCode.is_active ? 'Deactivate' : 'Activate'}
+															{promocode.active ? 'Deactivate' : 'Activate'}
 														</button>
 														<button 
 															class="btn btn-danger"
-															on:click={() => deletePromoCode(promoCode.id)}
+															on:click={() => deletepromocode(promocode.id)}
 															disabled={loading}
 															title="Delete"
 														>
@@ -553,8 +553,8 @@
                                                     <td>
                                                         {#if redemption.asset_id}
                                                             Asset #{redemption.asset_id}
-                                                        {:else if redemption.robux_amount}
-                                                            {redemption.robux_amount} Robux
+                                                        {:else if redemption.robux}
+                                                            {redemption.robux} Robux
                                                         {/if}
                                                     </td>
                                                     <td>{new Date(redemption.redeemed_at).toLocaleString()}</td>

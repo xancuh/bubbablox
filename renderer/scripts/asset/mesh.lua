@@ -1,12 +1,12 @@
 local Lighting = game:GetService("Lighting")
 local assetId = {1234}
-local url = "http://bb.zawg.ca"
+local baseURL = "http://localhost"
 local jobId = "InsertJobIdHere"
 local uploadURL = "UPLOAD_URL_HERE";
 local ThumbnailGenerator = game:GetService("ThumbnailGenerator")
 local HttpService = game:GetService("HttpService")
-game:GetService("ContentProvider"):SetBaseUrl(url)
-game:GetService("InsertService"):SetAssetUrl(url .. "/asset/?id=%d")
+game:GetService("ContentProvider"):SetBaseUrl(baseURL)
+game:GetService("InsertService"):SetAssetUrl(baseURL .. "/asset/?id=%d")
 game:GetService("ScriptContext").ScriptsDisabled = true
 HttpService.HttpEnabled = true
 ThumbnailGenerator.GraphicsMode = 2 
@@ -18,7 +18,7 @@ function rendermesh(id)
     
     local mesh = Instance.new("SpecialMesh", meshPart)
     mesh.MeshType = "FileMesh"
-    mesh.MeshId = ("%s/asset?id=%d"):format(url, id)
+    mesh.MeshId = ("%s/asset?id=%d"):format(baseURL, id)
     meshPart.Size = Vector3.new(2, 2, 2)
 
     local encoded = ThumbnailGenerator:Click('PNG', _X_RES_, _Y_RES_, true, true)

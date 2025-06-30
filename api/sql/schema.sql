@@ -354,7 +354,9 @@ CREATE TABLE public.asset_place (
     vip_price integer,
     is_public_domain boolean DEFAULT false NOT NULL,
     access integer DEFAULT 1 NOT NULL,
-    visit_count bigint DEFAULT '0'::bigint NOT NULL
+    visit_count bigint DEFAULT '0'::bigint NOT NULL,
+    gear_permission boolean DEFAULT false NOT NULL,
+    playable boolean DEFAULT true NOT NULL
 );
 
 
@@ -2397,7 +2399,8 @@ ALTER SEQUENCE public.user_friend_request_id_seq OWNED BY public.user_friend_req
 CREATE TABLE public.user_hashed_ips (
     user_id bigint NOT NULL,
     hashed_ip text NOT NULL,
-    last_seen timestamp without time zone NOT NULL
+    last_seen timestamp without time zone NOT NULL,
+    block_status integer DEFAULT 0 NOT NULL
 );
 
 

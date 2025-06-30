@@ -5,9 +5,6 @@
 ]]
 
 --[[ FFLAG VALUES ]]
-
-print("jingus")
-
 local defeatableTopbarSuccess, defeatableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
 local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue == true)
 

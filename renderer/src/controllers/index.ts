@@ -1,6 +1,6 @@
 // this could still be split into separate files for better organization (but i don't care)
 // i removed all the game server stuff, and just turned it into exclusively a renderer
-// everything is fixed (i removed texture generation because it would freeze the whole ws server? EDIT: I JUST FIXED IT but it's too late now so i don't really care it just uses the content url onsite now)
+// everything is fixed (i removed texture generation because it would freeze the whole ws server? EDIT: fixed, but it's too late now so i don't really care it just uses the content url onsite now)
 import StdExceptions from '../helpers/Exceptions';
 import fs = require('fs');
 import path = require('path');
@@ -327,7 +327,7 @@ export default class CommandHandler extends StdExceptions {
     }
 	
 	// ALWAYS set expiration to 60. when it's like 12 hours all the jobs fill up, and it can't allocate anything
-	// (this was the cause of all my problems lmfao)
+	// (this was the cause of RCC crashing a lot)
     private createSoapRequest(script: string, jobId: string): { request: string; jobId: string; createdAt: number; } {
         const scriptToSend = script.replace(/InsertJobIdHere/g, jobId);
         const xml = `<?xml version="1.0" encoding="utf-8"?>

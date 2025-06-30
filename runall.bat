@@ -1,4 +1,5 @@
 @echo off
+cd C:\Users\Admin\Desktop\Revival\ecsr\ecsrev-main\services
 taskkill /f /im RCCService.exe
 start /b cmd /c "cd /d 2016-roblox-main && call run.bat"
 start /b cmd /c "cd /d RCCService && call run.bat"

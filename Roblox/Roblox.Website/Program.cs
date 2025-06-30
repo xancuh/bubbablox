@@ -62,6 +62,7 @@ Roblox.Configuration.DiscordForgotPasswordRedirect = configuration.GetSection("D
 Roblox.Configuration.DiscordLoginRedirect = configuration.GetSection("DiscordLoginRedirect").Value;
 Roblox.Configuration.DiscordKey = configuration.GetSection("DiscordKey").Value;
 Roblox.Configuration.IPSalt = configuration.GetSection("IPSalt").Value;
+Roblox.Configuration.IPHubApiKey = configuration.GetSection("IPHubApiKey").Value;
 Roblox.Configuration.HCaptchaPublicKey = configuration.GetSection("HCaptcha:Public").Value;
 Roblox.Configuration.HCaptchaPrivateKey = configuration.GetSection("HCaptcha:Private").Value;
 Roblox.Configuration.GameServerAuthorization = configuration.GetSection("GameServerAuthorization").Value;

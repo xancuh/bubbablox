@@ -243,10 +243,9 @@ public class UsersService : ServiceBase, IService
     public async Task<long> GetUserIdFromUsername(string username)
     {
         username = username.Replace("%", "");
-        var result = await db.QuerySingleOrDefaultAsync<UserId>("SELECT id as userId FROM \"user\" WHERE username ILIKE :username", new
-        {
-            username,
-        });
+		var result = await db.QuerySingleOrDefaultAsync<UserId>(
+			"SELECT id as userId FROM \"user\" WHERE username = :username", 
+			new { username });
         if (result == null || result.userId == 0) throw new RecordNotFoundException();
         return result.userId;
     }
@@ -415,15 +414,25 @@ public class UsersService : ServiceBase, IService
 			new { discordId });
 	}
 	
-	public async Task UpdateUserHashedIp(long userId, string iphash)
+	public async Task<string?> GetUserHashedIp(long userId)
+	{
+		return await db.QuerySingleOrDefaultAsync<string>(
+			"SELECT hashed_ip FROM user_hashed_ips WHERE user_id = @userId",
+			new { userId });
+	}
+
+	public async Task UpdateUserHashedIp(long userId, string ipHash, int blockStatus)
 	{
 		await db.ExecuteAsync(
-			"INSERT INTO user_hashed_ips (user_id, hashed_ip, last_seen) VALUES (:user_id, :hashed_ip, NOW()) " +
-			"ON CONFLICT (user_id) DO UPDATE SET hashed_ip = :hashed_ip, last_seen = NOW()",
-			new
+			"INSERT INTO user_hashed_ips (user_id, hashed_ip, block_status, last_seen) " +
+			"VALUES (@userId, @ipHash, @blockStatus, NOW()) " +
+			"ON CONFLICT (user_id) DO UPDATE " +
+			"SET hashed_ip = @ipHash, block_status = @blockStatus, last_seen = NOW()",
+			new 
 			{
-				user_id = userId,
-				hashed_ip = iphash
+				userId,
+				ipHash,
+				blockStatus
 			});
 	}
 	
