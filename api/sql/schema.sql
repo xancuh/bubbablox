@@ -1792,11 +1792,11 @@ ALTER TABLE public.password_reset_tokens OWNER TO postgres;
 
 CREATE TABLE public.promocode_redemptions (
     id integer NOT NULL,
-    promocode_id integer NOT NULL,
+    promocode integer NOT NULL,
     user_id bigint NOT NULL,
     redeemed_at timestamp without time zone DEFAULT now() NOT NULL,
     asset_id bigint,
-    robux_amount integer
+    robux integer
 );
 
 
@@ -1832,12 +1832,12 @@ CREATE TABLE public.promocodes (
     id integer NOT NULL,
     code character varying(50) NOT NULL,
     asset_id bigint,
-    robux_amount integer,
+    robux integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     expires_at timestamp with time zone,
-    max_uses integer,
-    use_count integer DEFAULT 0 NOT NULL,
-    is_active boolean DEFAULT true NOT NULL
+    maxuses integer,
+    uses integer DEFAULT 0 NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -4098,6 +4098,13 @@ CREATE INDEX group_wall_id_idx ON public.group_wall USING btree (group_id, id) W
 
 
 --
+-- Name: idx_user_username_lower; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_user_username_lower ON public."user" USING btree (lower((username)::text));
+
+
+--
 -- Name: moderation_bad_username_username_index; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -4449,7 +4456,7 @@ ALTER TABLE ONLY public.password_reset_tokens
 --
 
 ALTER TABLE ONLY public.promocode_redemptions
-    ADD CONSTRAINT promocode_redemptions_promocode_id_fkey FOREIGN KEY (promocode_id) REFERENCES public.promocodes(id);
+    ADD CONSTRAINT promocode_redemptions_promocode_id_fkey FOREIGN KEY (promocode) REFERENCES public.promocodes(id);
 
 
 --

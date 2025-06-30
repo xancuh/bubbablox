@@ -10,15 +10,9 @@ Dotnet 6: ```https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.
 
 GO: ```https://go.dev/dl/go1.20.6.windows-amd64.msi``` - for Asset Validation
 
--- SETTING UP --
-
-open CMD and use CD to go into the 
-```services/api``` folder and paste this:
- ```npm i``` (installs node modules)
-
 -- IMPORTANT --
 
-Then, open CMD and use CD to go into your PostgreSQL folder. It should be at 
+Open CMD and use CD to go into your PostgreSQL folder. It should be at 
 ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
 Then copy the schema.sql file in ```services/api/sql``` to that PostgreSQL bin folder, then run
 ```psql --username=yourusername --dbname=yourdatabase < schema.sql```
@@ -42,7 +36,7 @@ to
 Go into ```services/api```, 
 and create a folder named ```storage```.
 Inside the storage folder make a folder named ```asset``` 
-then go to ```services/api/public/images``` make a folder named ```thumbnails``` and ```group```
+then go to ```services/api/public/images``` make a folder named ```thumbnails``` and ```groups```
 
 open CMD and use CD to go to ```services/admin```, then run ```npm i``` and ```npm run build```
 
