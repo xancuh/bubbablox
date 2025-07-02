@@ -100,7 +100,7 @@ public class StaffFilter : ActionFilterAttribute, IAsyncActionFilter
             await OnFail(context.HttpContext);
             return;
         }
-        Console.WriteLine("[info] admin authorized user {0} for {1}", userInfo.userId, permission);
+        //Console.WriteLine("[info] admin authorized user {0} for {1}", userInfo.userId, permission);
         await next();
     }
 }

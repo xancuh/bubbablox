@@ -3,7 +3,7 @@ import { createUseStyles } from "react-jss";
 import { abbreviateNumber } from "../../lib/numberUtils";
 import { itemNameToEncodedName } from "../../services/catalog";
 import { getGameUrl } from "../../services/games";
-import CreatorLink from "../creatorLink";
+import CreatorLinkGame from "../creatorLinkGame";
 import useCardStyles from "../userProfile/styles/card";
 import Link from "../link";
 
@@ -221,7 +221,7 @@ const SmallGameCard = props => {
                 <div className='divider-top'/>
               </div>
             </> : null}
-            <p className={'ps-2 pt-2 pb-0 ' + s.creatorText}>By <CreatorLink type={props.creatorType} name={props.creatorName} id={props.creatorId}/></p>
+            <p className={'ps-2 pt-2 pb-0 ' + s.creatorText}>By <CreatorLinkGame type={props.creatorType} name={props.creatorName} id={props.creatorId}/></p>
           </div>
         }
       </div>

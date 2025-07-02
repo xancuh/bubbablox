@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+// roblox.models are for enums, just move this to websitemodels later
 using Roblox.Models.Promocodes;
 
 namespace Roblox.Website.Pages.Internal;

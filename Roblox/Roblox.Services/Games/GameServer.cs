@@ -642,6 +642,7 @@ public class GameServerService : ServiceBase
         string jobId = Guid.NewGuid().ToString();
 
         int mainRCCPort = RandomComponent.Next(30000, 40000);
+		// not used but startgameserver still accepts it so keep it here ig
         int networkServerPort = RandomComponent.Next(50000, 60000);
         string StartGameInfo;
         
@@ -667,7 +668,7 @@ public class GameServerService : ServiceBase
             };
     }
 		// TODO: MAKE this configurable
-		private static readonly int[] AllowedNetworkPorts = { 50, 51, 52, 54, 55, 56, 57 };
+		//private static readonly int[] AllowedNetworkPorts = { 50, 51, 52, 54, 55, 56, 57 };
 			
 		public async Task<string> StartGameServer(long placeId, int RCCPort, int networkServerPort, string jobId, int JobExpiration)
 		{
@@ -682,7 +683,7 @@ public class GameServerService : ServiceBase
 			}
 
 			int selectedNetworkPort = -1;
-			foreach (int port in AllowedNetworkPorts.OrderBy(x => RandomComponent.Next()))
+			foreach (int port in Configuration.AllowedNetworkPorts.OrderBy(x => RandomComponent.Next()))
 			{
 				if (IsPortAvailable(port))
 				{
@@ -758,7 +759,7 @@ public class GameServerService : ServiceBase
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"failed to send to webhook (did you configure your URL?): {ex.Message}");
+				Console.WriteLine($"failed to send to webhook (did you configure it?): {ex.Message}");
 			}
 
 			return "OK";
@@ -813,7 +814,7 @@ public class GameServerService : ServiceBase
         {
             t = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(2)),
         })).ToList();
-        Console.WriteLine("[info] there are {0} bad servers", serversToDelete.Count);
+        //Console.WriteLine("[info] there are {0} bad servers", serversToDelete.Count);
         foreach (var server in serversToDelete)
         {
             var players = await GetGameServerPlayers(server.id);

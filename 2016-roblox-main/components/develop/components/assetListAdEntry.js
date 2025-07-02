@@ -12,7 +12,7 @@ const getUrl = (target) => {
     return getItemUrl({assetId: target.targetId, name: target.targetName});
 
   if (target.targetType === 'Group')
-    return `/Groups/Group.aspx?gid=${target.targetId}`;
+    return `/My/Groups.aspx?gid=${target.targetId}`;
 
   throw new Error('Type not implemented: ' + target.targetType);
 }

@@ -137,7 +137,7 @@ namespace Roblox.Rendering
             mux.WaitOne();
             resultListeners[id] = stream =>
             {
-                Console.WriteLine("[info] SendCommand() over");
+                //Console.WriteLine("[info] SendCommand() over");
                 lock (responseMutex)
                 {
                     res.SetResult(stream);

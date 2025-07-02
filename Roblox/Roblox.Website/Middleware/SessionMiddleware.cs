@@ -144,17 +144,17 @@ public class SessionMiddleware
 		{
 			try
 			{
-				Console.WriteLine($"attempt {attempt} of getting IP stats");
+				//Console.WriteLine($"attempt {attempt} of getting IP stats");
 				var request = new HttpRequestMessage(HttpMethod.Get, $"http://v2.api.iphub.info/ip/{ip}");
 				request.Headers.Add("X-Key", Roblox.Configuration.IPHubApiKey);
 				var response = await http.SendAsync(request);
 				
 				if ((int)response.StatusCode == 429)
 				{
-					Console.WriteLine($"got 429 (attempt {attempt})");
+					//Console.WriteLine($"got 429 (attempt {attempt})");
 					if (attempt < retries)
 					{
-						Console.WriteLine($"waiting {delay}ms before retrying");
+						//Console.WriteLine($"waiting {delay}ms before retrying");
 						await Task.Delay(delay);
 						continue;
 					}
@@ -164,28 +164,28 @@ public class SessionMiddleware
 				
 				var content = await response.Content.ReadAsStringAsync();
 				var ipInfo = JsonSerializer.Deserialize<IPHubRes>(content);
-				Console.WriteLine($"got IP stats successfully");
+				//Console.WriteLine($"got IP stats successfully");
 				return ipInfo?.block ?? 0;
 			}
 			catch (HttpRequestException httpEx) when (httpEx.StatusCode == (System.Net.HttpStatusCode)429 && attempt < retries)
 			{
-				Console.WriteLine($"429 on attempt {attempt}");
-				Console.WriteLine($"waiting {delay}ms before retrying");
+				//Console.WriteLine($"429 on attempt {attempt}");
+				//Console.WriteLine($"waiting {delay}ms before retrying");
 				await Task.Delay(delay);
 				continue;
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"attempt {attempt} failed");
+				//Console.WriteLine($"attempt {attempt} failed");
 				if (attempt == retries)
 				{
-					Console.WriteLine("max retries reached, returning 0");
+					//Console.WriteLine("max retries reached, returning 0");
 					return 0;
 				}
 			}
 		}
 		
-		Console.WriteLine("all attempts completed without success, returning 0");
+		Console.WriteLine("attempts completed without success, returning 0");
 		return 0;
 	}
 
@@ -281,18 +281,6 @@ public class SessionMiddleware
 								authTimer.Stop();
 								ctx.Response.StatusCode = 302;
 								ctx.Response.Headers.Add("location", "/auth/notapproved");
-								return;
-							}
-						}
-
-						var appStatus = await users.IsUserApproved(userInfo.userId);
-						if (!appStatus && !userInfo.isAdmin && !userInfo.isModerator && !StaffFilter.IsOwner(userInfo.userId))
-						{
-							if (!currentPath.StartsWith("/auth/"))
-							{
-								authTimer.Stop();
-								ctx.Response.StatusCode = 302;
-								ctx.Response.Headers.Add("location", "/auth/application");
 								return;
 							}
 						}

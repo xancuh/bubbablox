@@ -124,7 +124,7 @@ spawn(function()
 		return game:GetService('HttpService'):JSONDecode(result)
 	end)
 	if not ok then
-		--print("GetStaff failed because",newList)
+		print("GetStaff failed because",newList)
 		return
 	end
 	pcall(function()
@@ -322,13 +322,13 @@ if placeId and url then
 	end)
 
 	if not ok then
-		local errorMessage = "failed to load game " .. placeId .. " " .. tostring(err)
-		warn(errorMessage)
+		local err = "failed to load game " .. placeId .. " " .. tostring(err)
+		warn(err)
 
 		pcall(function()
 			http:PostAsync(
-				"https://discord.com/api/webhooks/1375461556606861403/bHWg-mi_x7Tuml10eQZ0smQvc6FMmVCL_7iJM5Ut8OZHOI2t9JJWmQLZb1yTs1_RhfGr",
-				http:JSONEncode({ content = errorMessage }),
+				webhook,
+				http:JSONEncode({ content = err }),
 				Enum.HttpContentType.ApplicationJson
 			)
 		end)
@@ -370,7 +370,7 @@ else
 	warn("[Loader] place ID or URL is nil, cannot continue")
 	pcall(function()
 		http:PostAsync(
-			"https://discord.com/api/webhooks/1375461556606861403/bHWg-mi_x7Tuml10eQZ0smQvc6FMmVCL_7iJM5Ut8OZHOI2t9JJWmQLZb1yTs1_RhfGr",
+			webhook,
 			http:JSONEncode({ content = "PlaceId or URL is nil, cannot continue" }),
 			Enum.HttpContentType.ApplicationJson
 		)

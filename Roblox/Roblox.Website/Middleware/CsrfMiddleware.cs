@@ -175,12 +175,6 @@ public async Task InvokeAsync(HttpContext ctx)
         pathLower = pathLower.Substring(0, pathLower.Length - 1);
     }
 
-    if (ctx.Request.Headers.ContainsKey("jongus") && ctx.Request.Headers["jongus"] == "GoogleChromeIsTheWorstBrowserEverandIlovetheZachydramaBUBBAKEY!ANDLIBREWOLF")
-    {
-        await _next(ctx);
-        return;
-    }
-
     try
     {
         if (ctx.Request.Method != "GET" && ctx.Request.Method != "OPTIONS" && ctx.Request.Method != "HEAD" && 

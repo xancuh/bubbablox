@@ -1840,7 +1840,7 @@ namespace Roblox.Website.Controllers
 				throw new BadRequestException();
 			}
 
-			Console.WriteLine($"[INFO] auth success");
+			//Console.WriteLine($"[INFO] auth success");
 		}
 
         [HttpPostBypass("/gs/activity")]
@@ -2506,6 +2506,7 @@ namespace Roblox.Website.Controllers
 			}
 			finally
 			{
+				// idk man
 			}
 		}
     }

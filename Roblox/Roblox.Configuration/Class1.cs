@@ -36,6 +36,7 @@ public static class Configuration
     public static string HCaptchaPublicKey { get; set; }
     public static string HCaptchaPrivateKey { get; set; }
     public static IEnumerable<GameServerConfigEntry> GameServerIpAddresses { get; set; }
+	public static IEnumerable<int> AllowedNetworkPorts { get; set; } = Array.Empty<int>();
     public static string GameServerAuthorization { get; set; }
     public static string RobloxAppPrefix { get; set; } = "bbclient://";
     public static string AssetValidationServiceUrl { get; set; }

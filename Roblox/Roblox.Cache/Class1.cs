@@ -41,7 +41,7 @@ public class DistributedCache
                         toRemove.Add(k.Key);
                     }
                 }
-                Console.WriteLine("[info] Roblox.Cache.DistributedCache: Removing {0} expired items", toRemove.Count);
+                //Console.WriteLine("[info] Roblox.Cache.DistributedCache: Removing {0} expired items", toRemove.Count);
                 foreach (var old in toRemove)
                 {
                     cache.Remove(old);

@@ -259,7 +259,7 @@ public class ApplicationGuardMiddleware
     private async Task Redirect(HttpContext ctx, string dest)
     {
         ctx.Response.StatusCode = 302;
-        ctx.Response.Headers.Location = "/auth/home";
+        ctx.Response.Headers.Location = "/";
         await ctx.Response.WriteAsync("Object moved to <a href=\""+dest+"\">here</a>.");
     }
     
@@ -352,14 +352,14 @@ public class ApplicationGuardMiddleware
                     ctx.Response.Cookies.Delete("uabypass1");
             }
             uaBypassWatch.Stop();
-            Writer.Info(LogGroup.AbuseDetection, "took {0}ms to parse ua bypass cookie", uaBypassWatch.ElapsedMilliseconds);
+            //Writer.Info(LogGroup.AbuseDetection, "took {0}ms to parse ua bypass cookie", uaBypassWatch.ElapsedMilliseconds);
         }
         if (uaBlocked && !bypassAllowedForPath)
         {
-            ctx.Response.StatusCode = 302;
+			// make it a vague error
+            ctx.Response.StatusCode = 500;
             ctx.Response.Headers.ContentType = "text/html; charset=utf-8";
-            ctx.Response.Headers.Location = "/auth/captcha";
-            await ctx.Response.WriteAsync("Please click <a href=\"/auth/captcha\">here</a> to continue.");
+            await ctx.Response.WriteAsync("InternalServerError");
             Roblox.Metrics.ApplicationGuardMetrics.ReportBlockedUserAgent(ua);
             return;
         }

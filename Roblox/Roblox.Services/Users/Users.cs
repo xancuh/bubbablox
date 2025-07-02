@@ -1548,19 +1548,19 @@ public class UsersService : ServiceBase, IService
     public async Task PurchaseNormalItem(long userIdBuyer, long assetId, CurrencyType expectedCurrency)
     {
         using var log = Writer.CreateWithId(LogGroup.ItemPurchase);
-        log.Info($"PurchaseNormalItem start. buyer={userIdBuyer} assetId={assetId}");
+        // log.Info($"PurchaseNormalItem start. buyer={userIdBuyer} assetId={assetId}");
 
         var canPurchase = await CanAssetBePurchased(assetId, userIdBuyer, expectedCurrency);
         if (canPurchase != PurchaseAbuseFailureReason.Ok)
         {
-            log.Info("cannot purchase asset. CanAssetBePurchased returned {0}", canPurchase.ToString());
+            // log.Info("cannot purchase asset. CanAssetBePurchased returned {0}", canPurchase.ToString());
             throw new RobloxException(400, 0, "Cannot purchase asset at this time. Try again later.");
         }
         // Acquire a lock on the assetId before starting
         await using var redLock = await Cache.redLock.CreateLockAsync("PurchaseAsset:" + assetId, TimeSpan.FromSeconds(10));
         if (!redLock.IsAcquired)
             throw new RobloxException(429, 0, "TooManyRequests");
-        log.Info($"got PurchaseAsset lock");
+        // log.Info($"got PurchaseAsset lock");
         
         await InTransaction(async _ =>
         {
@@ -1571,7 +1571,7 @@ public class UsersService : ServiceBase, IService
                 EconomyMetrics.ReportUserAlreadyOwnsItemDuringPurchase(log.GetLoggedStrings(), userIdBuyer, assetId);
                 throw new InternalPurchaseFailureException(InternalPurchaseFailReason.UserAlreadyOwnsBeforePurchase);
             }
-            log.Info("owned copies len = {0}", ownedCopies.Count);
+            // log.Info("owned copies len = {0}", ownedCopies.Count);
             // This is ugly but I can't think of another way
             var assetDetails = await db.QuerySingleOrDefaultAsync<MinimalCatalogEntry>("SELECT id as assetId, is_for_sale as isForSale, price_robux as priceRobux, price_tix as priceTickets, is_limited as isLimited, is_limited_unique as isLimitedUnique, sale_count as saleCount, serial_count as serialCount, creator_id as creatorId, creator_type as creatorType, offsale_at as offsaleAt, asset_type as assetType FROM asset WHERE id = :id", new
             {
@@ -1611,20 +1611,20 @@ public class UsersService : ServiceBase, IService
                     EconomyMetrics.ReportUserDoesNotHaveEnoughRobuxDuringPurchase(log.GetLoggedStrings(), userIdBuyer, assetId, balance, assetDetails.priceRobux ?? 0);
                 throw new InternalPurchaseFailureException(InternalPurchaseFailReason.BalanceLessThanPrice);
             }
-            log.Info("buyer balance = {0} item price = {1}", balance, assetDetails.priceRobux);
+            // log.Info("buyer balance = {0} item price = {1}", balance, assetDetails.priceRobux);
             
             // Not all groups have an economy yet. Create if required.
             if (assetDetails.creatorType == CreatorType.Group)
             {
                 await ec.CreateGroupBalanceIfRequired(assetDetails.creatorId);
-                log.Info("seller is group, created balance if required");
+                // log.Info("seller is group, created balance if required");
             }
 
             // This is the serialNumber the user will get
             int? serialNumber = null;
             if (assetDetails.isLimitedUnique)
             {
-                log.Info("item has a serial");
+                // log.Info("item has a serial");
 
                 // If item has a specific copy count that can be sold, confirm it hasn't run out
                 var saleCount = await CountSoldCopiesForAsset(assetId);
@@ -1636,11 +1636,11 @@ public class UsersService : ServiceBase, IService
                 }
                 // User gets saleCount+1 serial number
                 serialNumber = saleCount + 1;
-                log.Info("give buyer serial = {0} (saleCount = {1})", serialNumber, saleCount);
+                // log.Info("give buyer serial = {0} (saleCount = {1})", serialNumber, saleCount);
                 // If this would make the asset the final sale, mark as no longer for sale
                 if (assetDetails.serialCount != 0 && saleCount + 1 >= assetDetails.serialCount)
                 {
-                    log.Info("marking item as no longer for sale. serialCount = {0} saleCount = {1}", assetDetails.serialCount, saleCount+1);
+                    // log.Info("marking item as no longer for sale. serialCount = {0} saleCount = {1}", assetDetails.serialCount, saleCount+1);
                     await db.ExecuteAsync("UPDATE asset SET is_for_sale = false WHERE id = :id", new
                     {
                         id = assetId,
@@ -1654,11 +1654,11 @@ public class UsersService : ServiceBase, IService
                 asset_id = assetDetails.assetId,
                 serial = serialNumber,
             });
-            log.Info("created userAsset id = {0}", userAssetId);
+            // log.Info("created userAsset id = {0}", userAssetId);
             // If this is a package, we have to grant assetIds
             if (assetDetails.assetType == Type.Package)
             {
-                log.Info("this is a package. adding package assets.");
+                // log.Info("this is a package. adding package assets.");
                 using var assets = ServiceProvider.GetOrCreate<AssetsService>(this);
                 foreach (var id in await assets.GetPackageAssets(assetId))
                 {
@@ -1671,11 +1671,11 @@ public class UsersService : ServiceBase, IService
                             asset_id = id,
                             serial = (int?)null,
                         });
-                        log.Info("added assetId {0} to user: {1}", id, packageUserAssetId);
+                        // log.Info("added assetId {0} to user: {1}", id, packageUserAssetId);
                     }
                     else
                     {
-                        log.Info("user already owns an asset from this package: {0}", id);
+                        // log.Info("user already owns an asset from this package: {0}", id);
                     }
                 }
             }
@@ -1686,11 +1686,11 @@ public class UsersService : ServiceBase, IService
                 // Subtract price from buyer
                 Debug.Assert(realPrice != null);
                 await ec.DecrementCurrency(CreatorType.User, userIdBuyer, expectedCurrency, realPrice.Value);
-                log.Info("currency is {0}", expectedCurrency);
-                log.Info("subtracted amount from buyer. price = {0}", assetDetails.priceRobux);
+                // log.Info("currency is {0}", expectedCurrency);
+                // log.Info("subtracted amount from buyer. price = {0}", assetDetails.priceRobux);
 
                 amountToSeller = (long)(0.7 * realPrice);
-                log.Info("item is not free. amount to seller = {0}", amountToSeller);
+                // log.Info("item is not free. amount to seller = {0}", amountToSeller);
 
                 if (amountToSeller <= 0)
                     amountToSeller = 0;
@@ -1705,15 +1705,15 @@ public class UsersService : ServiceBase, IService
             // Create buyer transaction
             var buyerTransaction = await ec.InsertTransaction(new AssetPurchaseTransaction(userIdBuyer, assetDetails.creatorType,
                 assetDetails.creatorId, expectedCurrency, realPrice ?? 0, assetDetails.assetId, userAssetId));
-            log.Info("created buyerTransaction {0}", buyerTransaction);
+            // log.Info("created buyerTransaction {0}", buyerTransaction);
             // Create transaction for seller
             var sellerTransaction = await ec.InsertTransaction(new AssetSaleTransaction(userIdBuyer, assetDetails.creatorType,
                 assetDetails.creatorId, expectedCurrency, amountToSeller, assetDetails.assetId, userAssetId));
-            log.Info("created sellerTransaction {0}", sellerTransaction);
+            // log.Info("created sellerTransaction {0}", sellerTransaction);
             // Increment sales count. Reliability isn't super important here since this is just used for cache.
             using var assetsService = ServiceProvider.GetOrCreate<AssetsService>(this);
             await assetsService.IncrementSaleCount(assetId);
-            log.Info("PurchaseItem success");
+            // log.Info("PurchaseItem success");
             // Finally, metrics
             if (assetDetails.priceRobux > 0)
                 EconomyMetrics.ReportRobuxVolumeChange(assetDetails.priceRobux.Value);
@@ -1741,7 +1741,7 @@ public class UsersService : ServiceBase, IService
     public async Task PurchaseResellableItem(long userIdBuyer, long userAssetId)
     {
         var log = Writer.CreateWithId(LogGroup.ItemPurchaseResale);
-        log.Info("PurchaseResellableItem start. buyer = {0} userAssetId = {1}", userIdBuyer, userAssetId);
+        // log.Info("PurchaseResellableItem start. buyer = {0} userAssetId = {1}", userIdBuyer, userAssetId);
         // UserAsset lock
         await using var userAssetLock = await AcquireUserAssetLock(userAssetId);
         // Buyer lock
@@ -1757,7 +1757,7 @@ public class UsersService : ServiceBase, IService
                 throw new InternalPurchaseFailureException(InternalPurchaseFailReason.UserAssetBuyerAndSellerAreSame);
             if (userAsset.price < 1)
                 throw new InternalPurchaseFailureException(InternalPurchaseFailReason.UserAssetPriceIsLessThanOne);
-            log.Info("price = {0} sellerId = {1}", userAsset.price, userAsset.userId);
+            // log.Info("price = {0} sellerId = {1}", userAsset.price, userAsset.userId);
             var copies = await GetUserAssets(userIdBuyer, userAsset.assetId);
 
             var maxPossibleCopies = await GetMaximumCopyCount(userAsset.assetId);
@@ -1781,23 +1781,23 @@ public class UsersService : ServiceBase, IService
                 user_id = userIdBuyer,
                 updated_at = transactionStartTime,
             });
-            log.Info("userAsset marked as no longer for sale");
+            // log.Info("userAsset marked as no longer for sale");
             // Subtract balance from buyer
             await ec.DecrementCurrency(CreatorType.User, userIdBuyer, CurrencyType.Robux, userAsset.price);
-            log.Info("subtracted {0} from buyer", userAsset.price);
+            // log.Info("subtracted {0} from buyer", userAsset.price);
             // Triple check
             var newBalance = await ec.GetUserRobux(userIdBuyer);;
-            log.Info("buyer new balance = {0}",newBalance);
+            // log.Info("buyer new balance = {0}",newBalance);
             if (newBalance != expectedBuyerBalanceAfterSale)
                 throw new Exception("Branch 4 (Critical) - Somebody REALLY broke a lock!");
             // Add amount to seller
             var amountToAdd = (long)Math.Floor(0.7 * userAsset.price);
-            log.Info("add {0} to seller", amountToAdd);
+            // log.Info("add {0} to seller", amountToAdd);
             if (amountToAdd != 0)
             {
                 await ec.IncrementCurrency(CreatorType.User, userAsset.userId, CurrencyType.Robux, amountToAdd);
             }
-            log.Info("added {0} to seller",amountToAdd);
+            // log.Info("added {0} to seller",amountToAdd);
             // Update item RAP
             var itemRap = await db.QuerySingleOrDefaultAsync<RecentAveragePrice>("SELECT recent_average_price as recentAveragePrice FROM asset WHERE id = :id",
                 new
@@ -1806,7 +1806,7 @@ public class UsersService : ServiceBase, IService
                 });
             var nullableRap = itemRap.recentAveragePrice;
             var rap = nullableRap ?? 0;
-            log.Info("item old RAP was {0}", rap);
+            // log.Info("item old RAP was {0}", rap);
             // From TS: "Math.trunc" is used instead of "Math.floor" since it's what Roblox+ uses, and I'm sure webgl3d knows what the actual Roblox code looks like to calculate RAP
             // let newRap = Math.trunc(currentRap - (currentRap - price) / 10);
             var newRap = rap - (rap - userAsset.price) / 10;
@@ -1814,32 +1814,32 @@ public class UsersService : ServiceBase, IService
             {
                 // apparently this is what roblox does. Rolimons, Roblox+, etc, all do this
                 newRap = userAsset.price;
-                log.Info("item had RAP of zero, so new rap = {0}", newRap);
+                // log.Info("item had RAP of zero, so new rap = {0}", newRap);
             }
-            log.Info("new itemRap = {0}", newRap);
+            // log.Info("new itemRap = {0}", newRap);
             // Update the RAP
             await db.ExecuteAsync("UPDATE asset SET recent_average_price = :rap WHERE id = :id", new
             {
                 id = userAsset.assetId,
                 rap = newRap,
             });
-            log.Info("item RAP successfully updated");
+            // log.Info("item RAP successfully updated");
             // Create history entry for chart
             var id = await InsertAsync("collectible_sale_logs", new
             {
                 asset_id = userAsset.assetId,
                 amount = userAsset.price,
             });
-            log.Info("inserted collectible_sale_logs id = {0}", id);
+            // log.Info("inserted collectible_sale_logs id = {0}", id);
             // Create transaction for buyer
             var buyerTransaction = await ec.InsertTransaction(new AssetResalePurchaseTransaction(userIdBuyer,
                 userAsset.userId, CurrencyType.Robux, userAsset.price, userAsset.assetId, userAsset.userAssetId));
-            log.Info("created buyerTransaction id = {0}", buyerTransaction);
+            // log.Info("created buyerTransaction id = {0}", buyerTransaction);
             // Create transaction for seller
             var sellerTransaction = await ec.InsertTransaction(new AssetReSaleTransaction(userIdBuyer, userAsset.userId,
                 CurrencyType.Robux, amountToAdd, userAsset.assetId, userAsset.userAssetId));
-            log.Info("created sellerTransaction id = {0}", sellerTransaction);
-            log.Info("purchase success");
+            // log.Info("created sellerTransaction id = {0}", sellerTransaction);
+            // log.Info("purchase success");
             // Finally, metrics
             EconomyMetrics.ReportRobuxVolumeChange(userAsset.price);
             return 0;
