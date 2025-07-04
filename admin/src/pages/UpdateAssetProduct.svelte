@@ -24,6 +24,7 @@
 		priceTickets: number|null;
 		serialCount: number | null;
 		offsaleAt: string | null;
+		isVisible: boolean;
 	}
 	
 	let assetDetails: Partial<IDetailsResponse> = {};
@@ -184,6 +185,15 @@
 									<label for="description">Offsale Time (EST) (optional)</label>
 									<input type="text" class="form-control" id="offsale-time" placeholder="Format: YYYY-MM-DD HH:MM:SS" value={(assetDetails.offsaleAt && dayjs(assetDetails.offsaleAt).format("YYYY-MM-DD HH:MM:ss")) || ""} />
 								</div>
+								<div class="col-2 mt-4">
+									<label for="is_visible">Visible: </label>
+									<input 
+										type="checkbox" 
+										class="form-check-input" 
+										id="is_visible" 
+										checked={assetDetails.isVisible ?? true} 
+									/>
+								</div>
                             </div>
                         </div>
 
@@ -240,6 +250,8 @@
                                     }else{
                                         priceTickets = null;
                                     }
+									
+									const isVisible = getElementById("is_visible").checked;
                                     
                                     disabled = true;
                                     request
@@ -252,6 +264,7 @@
                                             offsaleDeadline,
                                             isLimited,
                                             isLimitedUnique,
+											isVisible
                                         })
                                         .then((d) => {
                                             window.location.href = `/catalog/${assetId}/--`;

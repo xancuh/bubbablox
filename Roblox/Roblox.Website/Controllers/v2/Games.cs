@@ -13,7 +13,7 @@ public class GamesControllerV2 : ControllerBase
     public async Task<RobloxCollectionPaginated<GamesForCreatorEntry>> GetUserGames(long userId,
         string? sortOrder, string? accessFilter, int limit, string? cursor = null)
     {
-        if (limit is > 100 or < 1) limit = 10;
+        if (limit is > 100 or < 1) limit = 25;
         int offset = int.Parse(cursor ?? "0");
         var result =
             (await services.games.GetGamesForType(CreatorType.User, userId, limit, offset, sortOrder ?? "asc", accessFilter ?? "All")).ToList();
@@ -29,7 +29,7 @@ public class GamesControllerV2 : ControllerBase
     public async Task<RobloxCollectionPaginated<GamesForCreatorEntry>> GetGroupGames(long groupId,
         string? sortOrder, string? accessFilter, int limit, string? cursor = null)
     {
-        if (limit is > 100 or < 1) limit = 10;
+        if (limit is > 100 or < 1) limit = 25;
         int offset = int.Parse(cursor ?? "0");
         var result =
             (await services.games.GetGamesForType(CreatorType.Group, groupId, limit, offset, sortOrder, accessFilter)).ToList();

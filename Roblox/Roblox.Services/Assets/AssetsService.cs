@@ -1028,6 +1028,8 @@ public class AssetsService : ServiceBase, IService
             default, FileOptions.Asynchronous);
         var place = await CreateAsset("Place", null, creatorUserId, creatorType, creatorId, basePlateFile,
             Type.Place, Genre.All, ModerationStatus.ReviewApproved, DateTime.UtcNow, DateTime.UtcNow);
+		var rbxl = Path.Combine(Configuration.RccServicePath, "content", $"{place.assetId}.rbxl");
+		File.Copy(basePlateLocation, rbxl, overwrite: true);
         return new()
         {
             placeId = place.assetId,
@@ -1037,7 +1039,7 @@ public class AssetsService : ServiceBase, IService
     public async Task<ProductEntry> GetProductForAsset(long assetId)
     {
         var result = await db.QuerySingleOrDefaultAsync<ProductEntry>(
-            "SELECT name, description,  is_for_sale as isForSale, is_limited as isLimited, is_limited_unique as isLimitedUnique, price_robux as priceRobux, price_tix as priceTickets, serial_count as serialCount, offsale_at as offsaleAt FROM asset WHERE id = :id",
+            "SELECT name, description, is_for_sale as isForSale, is_limited as isLimited, is_limited_unique as isLimitedUnique, price_robux as priceRobux, price_tix as priceTickets, serial_count as serialCount, offsale_at as offsaleAt, visible as isVisible FROM asset WHERE id = :id",
             new
             {
                 id = assetId,
@@ -1082,6 +1084,26 @@ public class AssetsService : ServiceBase, IService
             updated_at = DateTime.UtcNow,
         });
     }
+	
+	public async Task UpdateAssetVisibility(long assetId, bool isHidden)
+    {
+
+        await UpdateAsync("asset", assetId, new
+        {
+            visible = isHidden,
+        });
+    }
+	
+	public async Task<bool> GetAssetVisibility(long assetId)
+	{
+		var result = await db.QuerySingleOrDefaultAsync<Dto.Assets.AssetVisibility>(
+			"SELECT visible FROM asset WHERE id = :id", 
+			new { id = assetId });
+		
+		if (result == null) throw new RecordNotFoundException();
+		
+		return result.visible;
+	}
 
     [Obsolete("Use UpdateAssetMarketInfo() without the price to update product data, or SetItemPrice to set the price")]
     public async Task UpdateAssetMarketInfo(long assetId, bool isForSale, bool isLimited, bool isLimitedUnique,

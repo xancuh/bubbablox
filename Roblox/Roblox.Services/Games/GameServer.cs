@@ -681,7 +681,7 @@ public class GameServerService : ServiceBase
 			{
 				return "BAD";
 			}
-
+			Console.WriteLine($"[DEBUG] current GS ports: {string.Join(",", currentGameServerPorts.Select(kvp => $"{kvp.Key}:{kvp.Value}"))}");
 			int selectedNetworkPort = -1;
 			foreach (int port in Configuration.AllowedNetworkPorts.OrderBy(x => RandomComponent.Next()))
 			{
@@ -738,52 +738,58 @@ public class GameServerService : ServiceBase
 					</soap:Body>
 				</soap:Envelope>";
 
-			await SendSoapRequestToRcc($"http://127.0.0.1:{RCCPort}", XML, "OpenJobEx");
-			currentPlaceIdsInUse.Add(placeId, jobId);
-			currentGameServerPorts.Add(jobId, selectedNetworkPort);
-			jobRccs.Add(jobId, rccServer);
-			
-			try
+		await SendSoapRequestToRcc($"http://127.0.0.1:{RCCPort}", XML, "OpenJobEx");
+		currentPlaceIdsInUse.Add(placeId, jobId);
+		currentGameServerPorts.Add(jobId, selectedNetworkPort);
+		jobRccs.Add(jobId, rccServer);
+		
+		try
+		{
+			if (!string.IsNullOrEmpty(Configuration.Webhook))
 			{
-				if (!string.IsNullOrEmpty(Configuration.Webhook))
+				var webhookcont = new
 				{
-					var webhookcont = new
-					{
-						content = $"place {placeId} started with port {selectedNetworkPort} on server {jobId}"
-					};
-					
-					using var httpClient = new HttpClient();
-					var content = new StringContent(JsonSerializer.Serialize(webhookcont), Encoding.UTF8, "application/json");
-					await httpClient.PostAsync(Configuration.Webhook, content);
-				}
+					content = $"place {placeId} started with port {selectedNetworkPort} on server {jobId}"
+				};
+				
+				using var httpClient = new HttpClient();
+				var content = new StringContent(JsonSerializer.Serialize(webhookcont), Encoding.UTF8, "application/json");
+				await httpClient.PostAsync(Configuration.Webhook, content);
 			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"failed to send to webhook (did you configure it?): {ex.Message}");
-			}
-
-			return "OK";
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"failed to send to webhook (did you configure it?): {ex.Message}");
 		}
 
-		private bool IsPortAvailable(int port)
+		return "OK";
+	}
+
+	private bool IsPortAvailable(int port)
+	{
+		try
 		{
-			try
-			{
-				if (currentGameServerPorts.ContainsValue(port))
-				{
-					return false;
-				}
-				
-				var tcpListener = new TcpListener(IPAddress.Loopback, port);
-				tcpListener.Start();
-				tcpListener.Stop();
-				return true;
-			}
-			catch (SocketException)
+			// see if our gs dict contains any in use ports
+			if (currentGameServerPorts.ContainsValue(port))
 			{
 				return false;
 			}
+
+			// if it says the port is available, do a double check
+			var listener = new TcpListener(IPAddress.Loopback, port);
+			listener.Start();
+			listener.Stop();
+			return true;
 		}
+		catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+		{
+			return false;
+		}
+		catch (Exception)
+		{
+			return false;
+		}
+	}
     
     public static async Task SendSoapRequestToRcc(string URL, string XML, string SOAPAction)
     {

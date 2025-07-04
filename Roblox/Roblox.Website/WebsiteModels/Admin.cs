@@ -139,6 +139,7 @@ public class UpdateProductRequest
     public bool isForSale { get; set; }
     public bool isLimited { get; set; }
     public bool isLimitedUnique { get; set; }
+	public bool isVisible { get; set; }
     public int? priceRobux { get; set; }
     public int? priceTickets { get; set; }
     public int? maxCopies { get; set; }
@@ -161,6 +162,7 @@ public class CreateAssetRequest
     public Type assetTypeId { get; set; }
     public Genre genre { get; set; }
     public bool isForSale { get; set; }
+	public bool isVisible { get; set; }
     public bool isLimited { get; set; }
     public bool isLimitedUnique { get; set; }
     public int? price { get; set; }

@@ -102,7 +102,7 @@ local function pollToReportActivity()
 		--print("[info] ping response:", ok, err)
 		wait(5)
 	end
-	print("[warn] Server no longer OK. Will shut down soon. (No players!)")
+	--print("[warn] Server no longer OK. Will shut down soon. (No players!)")
 end
 
 local function shutdown()
@@ -124,7 +124,7 @@ spawn(function()
 		return game:GetService('HttpService'):JSONDecode(result)
 	end)
 	if not ok then
-		print("GetStaff failed because",newList)
+		--print("GetStaff failed because",newList)
 		return
 	end
 	pcall(function()
@@ -152,7 +152,7 @@ local function processModCommand(sender, message)
 				--print("Not a match!",name,"vs",userToBan)
 			end
 		end
-		print("ban", player, userToBan)
+		--print("ban", player, userToBan)
 		if player ~= nil then
 			local banmsg = string.format("**%s** (ID: %d) banned **%s** (ID: %d) from the game", 
 				sender.Name, sender.UserId, player.Name, player.UserId)
@@ -364,7 +364,7 @@ if placeId and url then
 
 		model.Parent = starterScripts
 	else
-		warn("[Loader] failed to load camera.rbxmx:", model)
+		warn("[Loader] failed to load camera:", model)
 	end
 else
 	warn("[Loader] place ID or URL is nil, cannot continue")
@@ -386,8 +386,9 @@ scriptContext:SetTimeout(10)
 scriptContext.ScriptsDisabled = false
 game:GetService("RunService"):Run()
 
+-- TODO: is there a way to send messages to the webhook without having to enable HTTP?
 if not http.HttpEnabled then
-	warn("[warn] http was disabled, re-enabling")
+	--warn("[warn] http was disabled, re-enabling")
 	http.HttpEnabled = true
 end
 

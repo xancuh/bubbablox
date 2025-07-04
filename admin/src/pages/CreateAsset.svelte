@@ -79,8 +79,19 @@
 					<input type="text" class="form-control" id="price" {disabled} />
 				</div>
 				<div class="col-2 mt-4">
-					<label for="is_for_sale">For Sale: </label>
-					<input type="checkbox" class="form-check-input" id="is_for_sale" />
+					<div class="form-check">
+						<input type="checkbox" class="form-check-input" id="is_for_sale" />
+						<label class="form-check-label" for="is_for_sale">For Sale</label>
+					</div>
+					<div class="form-check mt-2">
+						<input 
+							type="checkbox" 
+							class="form-check-input" 
+							id="is_visible" 
+							checked={true}
+						/>
+						<label class="form-check-label" for="is_visible">Visible</label>
+					</div>
 				</div>
 				<div class="col-6">
 					<label for="description">Limited Status</label>
@@ -115,6 +126,7 @@
 					bodyFormData.append("assetTypeId", assetTypeId);
 					bodyFormData.append("genre", document.getElementById("assetgenre").value);
 					bodyFormData.append("price", document.getElementById("price").value);
+					bodyFormData.append("isVisible", (document.getElementById("is_visible").checked).toString());
 					let offsaleTime = document.getElementById("offsale-time").value;
 					if (offsaleTime) {
 						const v = dayjs(offsaleTime, "YYYY-MM-DD HH:MM:SS");

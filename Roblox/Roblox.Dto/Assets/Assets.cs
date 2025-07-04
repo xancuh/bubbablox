@@ -34,11 +34,17 @@ namespace Roblox.Dto.Assets
         public bool isForSale { get; set; }
         public bool isLimited { get; set; }
         public bool isLimitedUnique { get; set; }
+		public bool isVisible { get; set; }
         public int? priceRobux { get; set; }
         public int? priceTickets { get; set; }
         public int? serialCount { get; set; }
         public DateTime? offsaleAt { get; set; }
     }
+	
+	public class AssetVisibility
+	{
+		public bool visible { get; set; }
+	}
 
     public class MultiGetEntryLowestSeller
     {

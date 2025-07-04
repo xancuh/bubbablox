@@ -1,4 +1,4 @@
- local jobId = "InsertJobIdHere";
+local jobId = "InsertJobIdHere";
 local userId = 65789275746246;
 local mode = "R6";
 local baseURL = "http://localhost";
@@ -64,16 +64,16 @@ local function render(id)
 
     local av = HttpService:JSONDecode('JSON_AVATAR')
 
-    local debugMode = false
-    local debugAssetId = 17
+    local test = false
+    local testasset = 17
 
     local done = 0
     for _, asset in pairs(av.assets) do
         print("[DEBUG] loading asset:", asset.name, "ID:", asset.id);
         coroutine.wrap(function()
             local ok, Asset = pcall(function()
-                if debugMode then
-                    return Insert:LoadAsset(debugAssetId)
+                if test then
+                    return Insert:LoadAsset(testasset)
                 else
                     return Insert:LoadAsset(asset.id)
                 end
@@ -131,7 +131,7 @@ local function render(id)
             Player.Character[part].BrickColor = BrickColor.new(color)
             print("[DEBUG] applied colours to", part);
         else
-            print("[WARNING] Could not find", part, "in character");
+            print("[WARNING] could not find", part, "in character");
         end
     end
 

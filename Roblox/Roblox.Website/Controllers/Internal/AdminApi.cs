@@ -2675,6 +2675,7 @@ Thank you for your understanding,
 
         await services.assets.UpdateAssetMarketInfo(request.assetId, request.isForSale, request.isLimited,
             request.isLimitedUnique, request.maxCopies, request.offsaleDeadline);
+		await services.assets.UpdateAssetVisibility(request.assetId, request.isVisible);
         await services.assets.SetItemPrice(request.assetId, request.priceRobux, request.priceTickets);
     }
 
@@ -2972,6 +2973,7 @@ Thank you for your understanding,
 		}
 
 		await services.assets.SetItemPrice(assetDetails.assetId, request.price, null);
+		await services.assets.UpdateAssetVisibility(assetDetails.assetId, request.isVisible);
 		await services.assets.UpdateAssetMarketInfo(assetDetails.assetId, request.isForSale, request.isLimited, request.isLimitedUnique, request.maxCopies, request.offsaleDeadline);
 
 		return assetDetails;
