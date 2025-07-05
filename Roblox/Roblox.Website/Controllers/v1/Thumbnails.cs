@@ -15,7 +15,7 @@ namespace Roblox.Website.Controllers;
 [Route("/apisite/thumbnails/v1")]
 public class ThumbnailsControllerV1 : ControllerBase
 {
-    /*
+    
     public static void StartThumbnailFixLoop()
     {
         // this thing is annoying in debug
@@ -122,7 +122,7 @@ public class ThumbnailsControllerV1 : ControllerBase
             }
         }
     }
-    */
+   
 
     private async Task<RobloxCollection<ThumbnailEntry>> Process18PlusAvatars(IEnumerable<ThumbnailEntry> data)
     {
@@ -265,13 +265,13 @@ public class ThumbnailsControllerV1 : ControllerBase
 		var result = new List<ThumbnailEntry>();
 		foreach (var id in requestedIds)
 		{
-			if (iconsDict.TryGetValue(id, out var existingIcon))
+			if (iconsDict.TryGetValue(id, out var existing))
 			{
-				if (existingIcon.imageUrl?.StartsWith("/images/thumbnails//images/thumbnails/") == true)
+				if (existing.imageUrl?.StartsWith("/images/thumbnails//images/thumbnails/") == true)
 				{
-					existingIcon.imageUrl = existingIcon.imageUrl.Replace("/images/thumbnails//images/thumbnails/", "/images/thumbnails/");
+					existing.imageUrl = existing.imageUrl.Replace("/images/thumbnails//images/thumbnails/", "/images/thumbnails/");
 				}
-				result.Add(existingIcon);
+				result.Add(existing);
 			}
 			else
 			{
@@ -279,7 +279,7 @@ public class ThumbnailsControllerV1 : ControllerBase
 				{
 					targetId = id,
 					state = ThumbnailState.Completed,
-					imageUrl = $"{Roblox.Configuration.BaseUrl}/img/placeholder/icon_one.png"
+					imageUrl = "/img/placeholder/icon_one.png"
 				});
 			}
 		}

@@ -18,19 +18,21 @@ this guide will be mostly a mix of the original one, and some things i added.
 ## database
 
 - open Command Prompt, and cd into your PostgreSQL folder. it should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
-- copy the schema.sql file in ```services/api/sql``` to that PostgreSQL bin folder, then run in a Command Prompt window in that folder:
+- copy the schema.sql file in ```api/sql``` to that PostgreSQL bin folder, then run in a Command Prompt window in that folder:
 
-```psql --username=yourusername --dbname=yourdatabase < schema.sql```
+```psql --username=postgres --dbname=postgres < schema.sql```
 
 ## setting up
 
 - rename the ```appsettings.example.json``` file in ```Roblox/Roblox.Website``` to just ```appsettings.json```, then open it.
 - change the default POSTGRES line that looks like this:
 - ```"Postgres": "Host=127.0.0.1; Database=bubbabloxnew; Password=test; Username=postgres; Maximum Pool Size=20",```
-to:
-``` "Postgres": "Host=127.0.0.1; Database=The database you want to use, if you want to use the default one, make this 'postgres'; Password=your Postgres password; Username=postgres; Maximum Pool Size=20",```
 
-- press ```CTRL + H``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\``` to ```C:\\whereever your ECS folder is\\services\\```
+to:
+
+``` "Postgres": "Host=127.0.0.1; Database=postgres; Password=your Postgres password; Username=postgres; Maximum Pool Size=20",```
+
+- press ```CTRL + H``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\``` to ```C:\\whereever your ECS folder is\\``` (make sure it's double slashed! so it should look like ```C:\\folder1\\folder2\\```)
 - you should update everything in the appsettings.json file to your configuration.
 - you should also rename ```game-servers.example.json``` to just ```game-servers.json```
 - go to ```services/renderer```, rename the file named ```config.example.json``` to ```config.json``` and change everything inside of it so it works with your main site and matches your appsettings.json.
@@ -46,6 +48,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - go to ```services/2016-roblox-main``` and rename the file named config.example.json to config.json.
 - replace ```your.domain``` with your actual domain inside of that config.json file.
 - in a Command Prompt window, cd into that same folder (```2016-roblox-main```), do ```npm i``` and then ```npm run build```
+- also in a Command Prompt window, cd into ```renderer```, and do ```npm i``` and then ```npm run build```
 
 ## discord
 
@@ -58,7 +61,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 
 - download [HxD](https://mh-nexus.de/en/downloads.php?product=HxD20) and drag the RCCService.exe file into it. make sure the domain you are using for this is exactly 10 characters, or it won't work correctly without a workaround (provided below).
 - the reason for this is the way that RCC was compiled, it was set to use Roblox's domain which is 10 characters. just replace it with your 10 char domain (CTRL + R, then do bb.zawg.ca then replace it with your domain. make sure your direction is all)
-- the only thing, is that you should search for ```NS1``` after closing the replace window and pressing ctrl + F and replacing your domain with roblox.com for each ns. so replace your.domain in ns1, with roblox.com and so on until ns3. [example](https://zawg.ca/assets/photos/demo1.png)
+- the only thing, is that you should search for ```NS1``` after closing the replace window and pressing ctrl + F and replacing your domain/bb.zawg.ca with roblox.com for each ns. so replace your.domain/bb.zawg.ca in ns1, with roblox.com and so on until ns3. [example](https://zawg.ca/assets/photos/demo1.png)
 - do the same for the client, except the roblox NS patch as it is not needed for the client. change your public key and your private key, everything related to it.
 - you can easily find guides/tools for it. if you do, do the same for the webserver.
 - also, change the domain in AppSettings.xml to your domain. (for client and RCC)
@@ -71,7 +74,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 **people will not be able to connect if you do this! it's only local, so you need a 10 character domain and to forward the ports in the appsettings.json for it to work properly and so people can connect.**
 
 ## the site should be setup at this point!
-- go into ```/services```, run ```runall.bat```, when it's all done go to your site at http://localhost:90.
+- go into ```/services```, run ```runall.bat```, when it's all done go to your site at http://localhost.
 - sign up for an account with the name ```ROBLOX```, then go to /admin, and go to create player under Users, put ID 2500, the name as ```UGC``` and a random password, then go to that user on the admin panel and click Nullify Password.
 - go back to Create Player and set the ID to 12, and the name as ```BadDecisions```, have common sense when making the password for this account.
 - now, sign up with your account normally.
@@ -84,7 +87,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - update everything in ```webserver\apache\conf\httpd.conf``` to your actual server root and directory locations.
 - go into ```webserver/root/game``` then go into join.ashx and change the bs.zawg.ca and sitetest.zawg.ca URL's to your website URL. so sitetest/bs.zawg.ca should just look like your domain. go through every file and change it.
 - do the same for PlaceLauncher.ashx and the asset endpoints, so it can actually get assets from your site in game.
-- you should now be able to start the webserver, and connect using the client. (the webserver is required for assets as well, so make sure to start it!!)
+- you should now be able to start the webserver, (```webserver\apache\bin\httpd.exe```) and connect using the client. (the webserver is required for assets as well, so make sure to start it!!)
 
 ## client
 

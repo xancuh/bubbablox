@@ -126,7 +126,7 @@ var prepareResponseForCache = (StaticFileResponseContext ctx) =>
     ctx.Context.Response.Headers.Remove(HeaderNames.LastModified);
 };
 
-var dataFileProvider = new PhysicalFileProvider(Roblox.Configuration.PublicDirectory + "Data");
+var datafolder = new PhysicalFileProvider(Roblox.Configuration.PublicDirectory + "Data");
 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -163,14 +163,14 @@ app.Use(async (context, next) =>
 
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-    FileProvider = dataFileProvider,
+    FileProvider = datafolder,
     RequestPath = "",
     DefaultFileNames = new List<string> { "index.html" }
 });
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = dataFileProvider,
+    FileProvider = datafolder,
     RequestPath = "",
     OnPrepareResponse = prepareResponseForCache
 });

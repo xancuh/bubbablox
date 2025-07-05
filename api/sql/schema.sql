@@ -65,7 +65,8 @@ CREATE TABLE public.asset (
     offsale_at timestamp with time zone,
     recent_average_price bigint,
     comments_enabled boolean DEFAULT false NOT NULL,
-    is_18_plus boolean DEFAULT false NOT NULL
+    is_18_plus boolean DEFAULT false NOT NULL,
+    visible boolean DEFAULT true
 );
 
 

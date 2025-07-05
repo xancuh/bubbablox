@@ -7,8 +7,6 @@ const env = conf.baseUrl.indexOf('localhost') !== -1 ? 'development' : 'producti
 console.log('Env =',env);
 
 const scripts: Record<string, string> = {
-	// GS
-	gameServer: fs.readFileSync(path.join(__dirname, '../scripts/gameserver.lua')).toString(),
 	// Thumbs
 	playerThumbnail: fs.readFileSync(path.join(__dirname, '../scripts/player/thumbnail.lua')).toString(),
 	playerHeadshot: fs.readFileSync(path.join(__dirname, '../scripts/player/headshot.lua')).toString(),
