@@ -25,7 +25,10 @@ this guide will be mostly a mix of the original one, and some things i added.
 - open Command Prompt, and cd into your PostgreSQL folder. it should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
 - copy the schema.sql file in ```api/sql``` to that PostgreSQL bin folder, then run in a Command Prompt window in that folder:
 
-```psql --username=postgres --dbname=postgres < schema.sql```
+```psql --username=** --dbname=* < schema.sql```
+
+- * = the name of the database you want to use, if this is your first time installing, use postgres
+- ** = your postgres username, default is postgres if you didn't set any in the setup
 
 ## setting up
 
@@ -36,6 +39,7 @@ this guide will be mostly a mix of the original one, and some things i added.
 to:
 
 ``` "Postgres": "Host=127.0.0.1; Database=*; Password=your Postgres password; Username=**; Maximum Pool Size=20",```
+
 - * = the name of the database you want to use, if this is your first time installing, use postgres
 - ** = your postgres username, default is postgres if you didn't set any in the setup
 
