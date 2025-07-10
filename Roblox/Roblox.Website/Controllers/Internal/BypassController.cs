@@ -12,7 +12,6 @@ using System.Diagnostics;
 using Roblox.Dto.Games;
 using Roblox.Dto.Persistence;
 using Roblox.Dto.Users;
-using Roblox.Dto.Marketplace;
 using MVC = Microsoft.AspNetCore.Mvc;
 using Roblox.Libraries.Assets;
 using Roblox.Libraries.FastFlag;
@@ -115,6 +114,12 @@ namespace Roblox.Website.Controllers
 				ChatFilter = "whitelist"
 			};
 		}
+		
+		[HttpGetBypass("/Game/ChatFilter.ashx")]
+        public string RCC_GetChatFilter()
+        {
+            return "True";
+        }
 		
 		private static bool isheaderbad(string headername)
 		{
@@ -222,6 +227,7 @@ namespace Roblox.Website.Controllers
 
 								Response.Headers.Clear();
 
+								// is it necessary to copy all headers except bad ones?
 								foreach (var header in response.Headers)
 								{
 									if (!isheaderbad(header.Key))
@@ -441,6 +447,7 @@ namespace Roblox.Website.Controllers
 			{
 				bool isInGroup = false;
 
+				// remove later
 				if (playerid == 261 && groupid == 2868472)
 				{
 					return "<Value Type=\"boolean\">true</Value>";
@@ -467,7 +474,8 @@ namespace Roblox.Website.Controllers
 			if (method == "getgrouprank" && playerid != null && groupid != null)
 			{
 				int rank = 0;
-
+				
+				// also remove later
 				if (playerid == 261 && groupid == 2868472)
 				{
 					return "<Value Type=\"integer\">254</Value>";
@@ -998,7 +1006,8 @@ namespace Roblox.Website.Controllers
 			{
 				return Redirect("/?signupmsg=This Discord account is already linked to another BubbaBlox account.");
 			}
-
+			
+			// this is so retarded please change this later
 			const string key = "Thisisthezachydramaandthebubbabloxsignupkeyidksomerandomshithere";
 			var token = $"THISISABUBBABLOXSIGNUPKEYANDTHISISTHESTARTINGPOINTFORITPLZCHANGEME|{DateTime.UtcNow:yyyyMMddHHmmss}|BUBBABLOX";
 			var encryptedtoken = EncryptWithKey(token, key);
@@ -1497,6 +1506,7 @@ namespace Roblox.Website.Controllers
         }
 #endif
 		// ik this sucks but  i was too lazy to implement the actual join script stuff
+		// only reason for this is cause i'm too stupid to fix the ticket with authentication
 		[HttpGetBypass("/game/PlaceLauncher.ashx")]
 		[HttpPostBypass("/game/PlaceLauncher.ashx")]
 		public async Task<MVC.IActionResult> PlaceLaunch()
@@ -1526,12 +1536,12 @@ namespace Roblox.Website.Controllers
 					{
 						if (!httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToArray()))
 						{
-							Console.WriteLine($"could not add header: {header.Key}");
+							//Console.WriteLine($"could not add header: {header.Key}");
 						}
 					}
 					catch (Exception ex)
 					{
-						Console.WriteLine($"error adding header {header.Key}");
+						//Console.WriteLine($"error adding header {header.Key: {ex.Message}");
 					}
 				}
 
@@ -1663,12 +1673,12 @@ namespace Roblox.Website.Controllers
 					{
 						if (!httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToArray()))
 						{
-							Console.WriteLine($"could not add header: {header.Key}");
+							//Console.WriteLine($"could not add header: {header.Key}");
 						}
 					}
 					catch (Exception ex)
 					{
-						Console.WriteLine($"error adding header {header.Key}: {ex.Message}");
+						//Console.WriteLine($"error adding header {header.Key}: {ex.Message}");
 					}
 				}
 
@@ -1795,90 +1805,25 @@ namespace Roblox.Website.Controllers
 			return $"{Configuration.BaseUrl}/Asset/BodyColors.ashx?userId={userId};{string.Join(";", filtered.Select(c => Configuration.BaseUrl + "/Asset/?id=" + c))}";
 		}
 		    
-       [HttpGetBypass("marketplace/productinfo")]
+        [HttpGet("marketplace/productinfo")]
         public async Task<dynamic> GetProductInfo(long assetId)
         {
-            try
+            var details = await services.assets.GetAssetCatalogInfo(assetId);
+            return new
             {
-                long Remaining = 0;
-                var details = await services.assets.GetAssetCatalogInfo(assetId);
-            
-                if(details.itemRestrictions.Contains("Limited") || details.itemRestrictions.Contains("LimitedUnique"))
+                TargetId = details.id,
+                AssetId = details.id,
+                ProductId = details.id,
+                Name = details.name,
+                Description = details.description,
+                AssetTypeId = (int)details.assetType,
+                IsForSale = details.isForSale,
+                IsPublicDomain = details.isForSale && details.price == 0,
+                Creator = new
                 {
-                    var resale = await services.assets.GetResaleData(assetId);
-                    Remaining = resale.numberRemaining;
-                }
-                return new
-                {
-                    TargetId = details.id,
-                    AssetId = details.id,
-                    ProductId = details.id, 
-                    Name = details.name,
-                    Description = details.description,
-                    AssetTypeId = (int)details.assetType,
-                    Creator = new
-                    {
-                        Id = details.creatorTargetId,
-                        Name = details.creatorName,
-                        CreatorType = details.creatorType,
-                        CreatorTargetId = details.creatorTargetId
-                    },  
-                    IconImageAssetId = 0,
-                    Created = details.createdAt,
-                    Updated = details.updatedAt,
-                    PriceInRobux = details.price,
-                    PriceInTickets = details.priceTickets,
-                    Sales = details.saleCount,
-                    IsNew = true,
-                    IsForSale = details.isForSale,
-                    IsPublicDomain = details.isForSale && details.price == 0,
-                    IsLimited = details.itemRestrictions.Contains("Limited"),
-                    IsLimitedUnique = details.itemRestrictions.Contains("LimitedUnique"),
-                    Remaining,
-                    MinimumMembershipLevel = 0
-                };
-            }
-            catch(RecordNotFoundException)
-            {
-                return Redirect($"https://economy.roblox.com/v2/assets/{assetId}/details");
-            };
-        }
-		
-        [HttpPostBypass("marketplace/purchase")]
-        public async Task <dynamic> PurchaseProductMarket([MVC.FromForm] Dto.Marketplace.PurchaseRequest purchaseRequest)
-        {
-            FeatureFlags.FeatureCheck(FeatureFlag.EconomyEnabled);
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            // some sanity checks
-            var productInfo = await services.assets.GetProductForAsset(purchaseRequest.productId);
-            if (purchaseRequest.productId is 0 or < 0)
-                purchaseRequest.productId = 0;
-            if(productInfo.isLimited || productInfo.isLimitedUnique){
-                return new
-                {
-                    status = "error",
-                };
-            }
-            
-            // Confirm asset is buyable
-            var user18Plus = await services.users.Is18Plus(safeUserSession.userId);
-            if (!user18Plus)
-            {
-                if (await services.assets.Is18Plus(purchaseRequest.productId))
-                    throw new RobloxException(400, 0,
-                        "You cannot purchase 18+ items until you confirm you are 18 or over.");
-            }
-            
-            await services.users.PurchaseNormalItem(safeUserSession.userId, purchaseRequest.productId, purchaseRequest.currencyTypeId);
-            stopwatch.Stop();
-            Metrics.EconomyMetrics.ReportItemPurchaseTime(stopwatch.ElapsedMilliseconds,
-                false);
-            return new 
-            {
-                success = true,
-                status = "Bought",
-                receipt = "test"
+                    Id = details.creatorTargetId,
+                    Name = details.creatorName,
+                },
             };
         }
 
@@ -2156,20 +2101,6 @@ namespace Roblox.Website.Controllers
             robloxRoot.Add(items);
             // return as string
             return new XDocument(robloxRoot).ToString();
-        }
-
-        [MVC.HttpPost("/moderation/filtertext/")]
-        public dynamic GetModerationText()
-        {
-            var text = HttpContext.Request.Form["text"].ToString();
-            return new
-            {
-                data = new
-                {
-                    white = text,
-                    black = text,
-                },
-            };
         }
 
         private void ValidateBotAuthorization()

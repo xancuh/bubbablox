@@ -501,6 +501,19 @@ public class TradesService : ServiceBase, IService
                 offeredItems.Find(v => !v.isOwner || (!v.isLimited && !v.isLimitedUnique) /*|| v.isForSale*/) == null);
             logic.Requires(SendTradeErrorCodes.BadUserAssets,
                 requestedItems.Find(v => !v.isOwner || (!v.isLimited && !v.isLimitedUnique) /*|| v.isForSale*/) == null);
+				
+				log.Info("Ownership validation results - Offered: {0} items, Requested: {1} items", 
+				offeredItems.Count, requestedItems.Count);
+
+			foreach (var item in offeredItems.Concat(requestedItems))
+			{
+				log.Info("Item {0}: User {1}, Owner {2}, Limited {3}, LimitedU {4}", 
+					item.userAssetId,
+					item.userId,
+					item.isOwner,
+					item.isLimited,
+					item.isLimitedUnique);
+			}
 
             var totalRequestedRap = requestedItems.Select(c => c.recentAveragePrice ?? 0).Sum();
             var totalOfferedRap = offeredItems.Select(c => c.recentAveragePrice ?? 0).Sum();

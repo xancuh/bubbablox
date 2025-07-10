@@ -15,6 +15,11 @@ this guide will be mostly a mix of the original one, and some things i added.
 - <a href="https://builds.dotnet.microsoft.com/dotnet/Sdk/6.0.412/dotnet-sdk-6.0.412-win-x64.exe">.NET 6.0</a>, *to run the website*
 - <a href="https://go.dev/dl/go1.20.6.windows-amd64.msi">Go</a>, *for asset validation*
 
+## requirements
+- at least Windows 10, Linux is untested as my server is a Windows machine. You should use Wine to run everything if you are using linux
+- a 10 character long domain with SSL for HTTPS
+- knowledge on how things like this work (you should have at least some experience with websites and coding to be able to host this. it's really not hard to set up if you know what you're doing.)
+
 ## database
 
 - open Command Prompt, and cd into your PostgreSQL folder. it should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```

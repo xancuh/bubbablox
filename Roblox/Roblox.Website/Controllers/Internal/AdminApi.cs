@@ -940,17 +940,17 @@ public class AdminApiController : ControllerBase
         return firstPass;
     }
 
-	[HttpPost("gift/open/{assetId:long}/{assetIdToGive:long}"), StaffFilter(Access.GiveUserItem)]
-	public async Task<dynamic> OpenGiftsByAssetType(long assetId, long assetIdToGive)
+	[HttpPost("gift/open/{assetId:long}/{assetToGive:long}"), StaffFilter(Access.GiveUserItem)]
+	public async Task<dynamic> OpenGiftsByAssetType(long assetId, long assetToGive)
 	{
 		try
 		{
-			Console.WriteLine($"finding all owners of asset {assetId} to give {assetIdToGive}");
+			Console.WriteLine($"getting all owners of gift {assetId} to give asset {assetToGive}");
 
-			var productDetails = await services.assets.GetProductForAsset(assetIdToGive);
+			var productDetails = await services.assets.GetProductForAsset(assetToGive);
 			if (productDetails == null)
 			{
-				throw new StaffException($"Asset {assetIdToGive} does not exist");
+				throw new StaffException($"Asset {assetToGive} does not exist");
 			}
 
 			var giftOwners = await db.QueryAsync(
@@ -966,42 +966,40 @@ public class AdminApiController : ControllerBase
 				  AND ua.user_id IS NOT NULL",
 				new { assetId });
 
-			var ownersList = giftOwners.ToList();
+			var owners = giftOwners.ToList();
 			
-			if (!ownersList.Any())
+			if (!owners.Any())
 			{
-				throw new StaffException($"No valid owners found for asset ID {assetId}");
+				throw new StaffException($"No owners found for gift {assetId}");
 			}
 
-			Console.WriteLine($"found {ownersList.Count} valid owners of asset {assetId}");
+			Console.WriteLine($"got {owners.Count} owners of gift {assetId}");
 
-			var results = new List<dynamic>();
-			var isLimitedUnique = productDetails.isLimitedUnique;
-			long serialBase = isLimitedUnique ? await services.assets.GetSaleCount(assetIdToGive) : 0;
+			var isLU = productDetails.isLimitedUnique;
+			long serialBase = isLU ? await services.assets.GetSaleCount(assetToGive) : 0;
 
-			foreach (var owner in ownersList)
+			foreach (var owner in owners)
 			{
 				try
 				{
 					var userId = (long)owner.user_id;
 					var userAssetId = (long)owner.user_asset_id;
 					var username = (string)owner.username;
-					var assetName = (string)owner.asset_name;
 
-					Console.WriteLine($"processing gift {userAssetId} for user {userId} ({username})");
+					Console.WriteLine($"giving {assetToGive} from gift {assetId} for user {userId} ({username})");
 
 					long? serial = null;
-					if (isLimitedUnique)
+					if (isLU)
 					{
 						serial = ++serialBase;
 					}
 
-					var newUserAssetId = await db.ExecuteScalarAsync<long>(
+					var newID = await db.ExecuteScalarAsync<long>(
 						"INSERT INTO user_asset (asset_id, user_id, serial, created_at, updated_at, price) " +
 						"VALUES (:asset_id, :user_id, :serial, NOW(), NOW(), 0) RETURNING id",
 						new
 						{
-							asset_id = assetIdToGive,
+							asset_id = assetToGive,
 							user_id = userId,
 							serial = serial
 						});
@@ -1013,23 +1011,8 @@ public class AdminApiController : ControllerBase
 						{
 							user_id = userId,
 							author_user_id = userSession.userId,
-							user_asset_id = newUserAssetId,
+							user_asset_id = newID,
 						});
-
-					results.Add(new
-					{
-						userId = userId,
-						username = username,
-						userAssetId = newUserAssetId,
-						serial = serial,
-						originalGift = new {
-							userAssetId = userAssetId,
-							assetId = assetId,
-							assetName = assetName
-						}
-					});
-
-					Console.WriteLine($"successfully processed gift {userAssetId}");
 				}
 				catch (Exception ex)
 				{
@@ -1037,28 +1020,26 @@ public class AdminApiController : ControllerBase
 				}
 			}
 
-			if (isLimitedUnique && results.Any())
+			if (isLU)
 			{
 				await db.ExecuteAsync(
 					"UPDATE asset SET sale_count = :count WHERE id = :assetId",
-					new { count = serialBase, assetId = assetIdToGive });
+					new { count = serialBase, assetId = assetToGive });
 				
-				Console.WriteLine($"updated sale count for asset {assetIdToGive} to {serialBase}");
+				Console.WriteLine($"updated sale count for asset {assetToGive} to {serialBase}");
 			}
 
 			return new
 			{
-				success = true,
-				count = results.Count,
-				results = results,
-				assetId = assetIdToGive,
-				assetName = productDetails.name
+				success = true
 			};
+			
+			Console.WriteLine($"successfully opened gift {assetToGive}");
 		}
 		catch (Exception ex)
 		{
 			Console.WriteLine($"error in gift open: {ex}");
-			throw new StaffException($"Failed to open gifts by asset ID (invalid ID or invalid gift ID?): {ex.Message}");
+			throw new StaffException($"failed to open gift (invalid ID or invalid gift ID?): {ex.Message}");
 		}
 	}
 
@@ -1113,7 +1094,7 @@ public class AdminApiController : ControllerBase
         {
             type = PurchaseType.Commission,
             currency_type = CurrencyType.Robux,
-            amount = 25,
+            amount = 15,
             // details
             sub_type = TransactionSubType.StaffAssetModeration,
             // user data
@@ -1130,7 +1111,8 @@ public class AdminApiController : ControllerBase
         {
             type = PurchaseType.Commission,
             currency_type = CurrencyType.Robux,
-            amount = 25,
+			// fuck you. NOTHING. we don't use apps anymore
+            amount = 0,
             // details
             sub_type = TransactionSubType.StaffApplicationReview,
             // user data

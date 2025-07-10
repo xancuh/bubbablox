@@ -146,10 +146,10 @@
         loading = true;
         
         try {
-            const requestData: any = {
+            const reqData: any = {
                 Code: code.toUpperCase(),
                 AssetId: assetId ? parseInt(assetId) : null,
-                RobuxAmount: robuxAmount ? parseInt(robuxAmount) : null,
+                Robux: robuxAmount ? parseInt(robuxAmount) : null,
                 MaxUses: parseInt(maxUses),
                 IsActive: isActive
             };
@@ -162,21 +162,21 @@
 
                 switch (expiresin) {
                     case 'seconds':
-                        requestData.ExpiresInSeconds = value;
+                        reqData.ExpiresInSeconds = value;
                         break;
                     case 'minutes':
-                        requestData.ExpiresInMinutes = value;
+                        reqData.ExpiresInMinutes = value;
                         break;
                     case 'hours':
-                        requestData.ExpiresInHours = value;
+                        reqData.ExpiresInHours = value;
                         break;
                     case 'days':
-                        requestData.ExpiresInDays = value;
+                        reqData.ExpiresInDays = value;
                         break;
                 }
             }
 
-            const response = await request.post(`/promocodes/create`, requestData);
+            const response = await request.post(`/promocodes/create`, reqData);
             
             successmsg = `Promocode created successfully! You can view it in the View Promocodes section.`;
             code = "";
