@@ -71,15 +71,8 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - you can easily find guides/tools for it. if you do, do the same for the webserver.
 - also, change the domain in AppSettings.xml to your domain. (for client and RCC)
 
-## if you don't have a domain, or a domain with 10 characters..
-
-- open ```C:\Windows\System32\drivers\etc\hosts``` in an elevated (running as admin) Notepad.
-- once in the file in an elevated Notepad, put something like ```127.0.0.1 your10chardomain```. it can be anything, but it must be 10 characters
-- continue to patch the RCC with that 10 character domain.
-**people will not be able to connect if you do this! it's only local, so you need a 10 character domain and to forward the ports in the appsettings.json for it to work properly and so people can connect.**
-
 ## the site should be setup at this point!
-- go into ```/services```, run ```runall.bat```, when it's all done go to your site at http://localhost.
+- go into ```/services```, run ```runall.bat```, when it's all done go to your site at your domain.
 - sign up for an account with the name ```ROBLOX```, then go to /admin, and go to create player under Users, put ID 2500, the name as ```UGC``` and a random password, then go to that user on the admin panel and click Nullify Password.
 - go back to Create Player and set the ID to 12, and the name as ```BadDecisions```, have common sense when making the password for this account.
 - now, sign up with your account normally.
