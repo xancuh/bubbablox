@@ -29,6 +29,8 @@ for (const s in scripts) {
 		.replace(/UPLOAD_URL_HERE/g, 'http://127.0.0.1:' + conf.port + '/api/upload-thumbnail-v1')
 		.replace(/AccessKey/g, conf.authorization.replace('"', '\\"'))
 		.replace(/local baseURL = "http:\/\/localhost";/g, `local baseURL = "${conf.baseUrl}";`)
+	    // replace all other http://localhost occurrences cause sometimes it fucks up
+		.replace(/http:\/\/localhost/g, conf.baseUrl);
 }
 
 export default () => {

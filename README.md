@@ -25,7 +25,10 @@ this guide will be mostly a mix of the original one, and some things i added.
 - open Command Prompt, and cd into your PostgreSQL folder. it should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
 - copy the schema.sql file in ```api/sql``` to that PostgreSQL bin folder, then run in a Command Prompt window in that folder:
 
-```psql --username=postgres --dbname=postgres < schema.sql```
+```psql --username=** --dbname=* < schema.sql```
+
+- * = the name of the database you want to use, if this is your first time installing, use postgres
+- ** = your postgres username, default is postgres if you didn't set any in the setup
 
 ## setting up
 
@@ -35,7 +38,10 @@ this guide will be mostly a mix of the original one, and some things i added.
 
 to:
 
-``` "Postgres": "Host=127.0.0.1; Database=postgres; Password=your Postgres password; Username=postgres; Maximum Pool Size=20",```
+``` "Postgres": "Host=127.0.0.1; Database=*; Password=your Postgres password; Username=**; Maximum Pool Size=20",```
+
+- * = the name of the database you want to use, if this is your first time installing, use postgres
+- ** = your postgres username, default is postgres if you didn't set any in the setup
 
 - press ```CTRL + H``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\``` to ```C:\\whereever your ECS folder is\\``` (make sure it's double slashed! so it should look like ```C:\\folder1\\folder2\\```)
 - you should update everything in the appsettings.json file to your configuration.
@@ -85,7 +91,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - update everything in ```webserver\apache\conf\httpd.conf``` to your actual server root and directory locations.
 - go into ```webserver/root/game``` then go into join.ashx and change the bs.zawg.ca and sitetest.zawg.ca URL's to your website URL. so sitetest/bs.zawg.ca should just look like your domain. go through every file and change it.
 - do the same for PlaceLauncher.ashx and the asset endpoints, so it can actually get assets from your site in game.
-- you should now be able to start the webserver, (```webserver\apache\bin\httpd.exe```) and connect using the client. (the webserver is required for assets as well, so make sure to start it!!)
+- you should now be able to start the webserver, (```webserver\apache\bin\httpd.exe```) and connect using the client. (the webserver is required for Roblox assets as well, so make sure to start it!!)
 
 ## client
 

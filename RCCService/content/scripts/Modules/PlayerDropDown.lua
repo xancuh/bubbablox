@@ -171,28 +171,28 @@ end
 local BlockedList = {}
 local MutedList = {}
 
-local function GetBlockedPlayersAsync()
-	local userId = LocalPlayer.userId
-	local apiPath = "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
-	if userId > 0 then
-		local blockList = nil
-		local success, msg = pcall(function()
-			local request = HttpRbxApiService:GetAsync(apiPath)
-			blockList = request and game:GetService('HttpService'):JSONDecode(request)
-		end)
-		if blockList and blockList['success'] == true and blockList['userList'] then
-			local returnList = {}
-			for i, v in pairs(blockList['userList']) do
-				returnList[v] = true
-			end
-			return returnList
-		end
-	end
-	return {}
-end
+-- local function GetBlockedPlayersAsync()
+	-- local userId = LocalPlayer.userId
+	-- local apiPath = "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
+	-- if userId > 0 then
+		-- local blockList = nil
+		-- local success, msg = pcall(function()
+			-- local request = HttpRbxApiService:GetAsync(apiPath)
+			-- blockList = request and game:GetService('HttpService'):JSONDecode(request)
+		-- end)
+		-- if blockList and blockList['success'] == true and blockList['userList'] then
+			-- local returnList = {}
+			-- for i, v in pairs(blockList['userList']) do
+				-- returnList[v] = true
+			-- end
+			-- return returnList
+		-- end
+	-- end
+	-- return {}
+-- end
 
 spawn(function()
-	BlockedList = GetBlockedPlayersAsync()
+	BlockedList = {}
 end)
 
 local function isBlocked(userId)

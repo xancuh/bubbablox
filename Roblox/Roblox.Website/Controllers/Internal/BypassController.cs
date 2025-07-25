@@ -760,7 +760,8 @@ namespace Roblox.Website.Controllers
 		
 		return sr.ReadToEnd();
 	}
-
+	
+	// this is so stupid (this should match discordcb)
 	private bool ValidateSignupCookie()
 	{
 		const string key = "Thisisthezachydramaandthebubbabloxsignupkeyidksomerandomshithere";
@@ -1007,7 +1008,7 @@ namespace Roblox.Website.Controllers
 				return Redirect("/?signupmsg=This Discord account is already linked to another BubbaBlox account.");
 			}
 			
-			// this is so retarded please change this later
+			// this is so retarded please change this later (this should match validatesignupcookie)
 			const string key = "Thisisthezachydramaandthebubbabloxsignupkeyidksomerandomshithere";
 			var token = $"THISISABUBBABLOXSIGNUPKEYANDTHISISTHESTARTINGPOINTFORITPLZCHANGEME|{DateTime.UtcNow:yyyyMMddHHmmss}|BUBBABLOX";
 			var encryptedtoken = EncryptWithKey(token, key);

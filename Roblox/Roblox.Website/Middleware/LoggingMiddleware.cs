@@ -21,7 +21,7 @@ public class RobloxLoggingMiddleware
 
         var str = $"[{ctx.Request.Method.ToUpper()}] {ctx.Request.GetEncodedUrl()} - {watch.ElapsedMilliseconds}ms";
 		// Should we comment this later? It always shows errors in console and the requests just flood it so you can't really see the errors
-        //Console.WriteLine(str);
+        Console.WriteLine(str);
     }
 }
 
