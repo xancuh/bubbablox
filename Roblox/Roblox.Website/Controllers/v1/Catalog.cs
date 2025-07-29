@@ -641,78 +641,72 @@ public class CatalogControllerV1 : ControllerBase
 	    };
     }
 
-	// this kinda sucks
+	// this kinda sucks (rewrite cause it sucked)
 	[HttpGet("recommendations/asset/{assetTypeId}")]
 	public async Task<dynamic> GetRecommendations(Models.Assets.Type assetTypeId, long contextAssetId, int numItems)
 	{
-		var result = (await services.assets.GetRecommendedItems(assetTypeId, contextAssetId, numItems)).ToList();
+		var result = await services.assets.GetRecommendedItems(assetTypeId, contextAssetId, numItems * 2); // get more items in case of hidden ones
 		
-		// filter out invisible assets and get until we have enough
-		var visible = new List<dynamic>();
-		var currentIndex = 0;
-		var attempts = 0;
+		var visibleItems = new List<dynamic>();
+		var processedAssetIds = new HashSet<long>();
 		
-		while (visible.Count < numItems && currentIndex < result.Count && attempts < 3)
+		foreach (var c in result)
 		{
-			var item = result[currentIndex];
-			var isVisible = await services.assets.GetAssetVisibility(item.assetId);
-			if (isVisible)
+			if (processedAssetIds.Contains(c.assetId)) continue;
+			if (visibleItems.Count >= numItems) break;
+			
+			// check visibilty
+			var isVisible = await services.assets.GetAssetVisibility(c.assetId);
+			if (!isVisible) continue;
+			
+			processedAssetIds.Add(c.assetId);
+			
+			visibleItems.Add(new
 			{
-				visible.Add(new
+				item = new
 				{
-					item = new
-					{
-						assetId = item.assetId,
-						name = item.name,
-						price = item.price,
-						premiumPrice = (int?) null,
-						absoluteUrl = $"/catalog/{item.assetId}/--",
-					},
-					creator = new
-					{
-						creatorId = item.creatorId,
-						creatorType = item.creatorType,
-						name = item.creatorName,
-						creatorProfileLink = item.creatorType == CreatorType.User
-							? $"/users/{item.creatorId}/profile"
-							: $"/groups/{item.creatorId}/--",
-					},
-					product = new
-					{
-						id = item.assetId,
-						priceInRobux = item.price,
-						isForsale = item.isForSale,
-						isPublicDomain = false,
-						isResellable = item.isLimited || item.isLimitedUnique,
-						item.isLimited,
-						item.isLimitedUnique,
-						isRental = false,
-						bcRequirement = 0,
-						totalPrivateSales = 0,
-						offsaleDeadline = item.offsaleDeadline,
-						noPriceText = (item.isLimited || item.isLimitedUnique && !item.isForSale) ? "No Resellers" : null,
-						sellerId = 0,
-						sellerName = (string?)null,
-						lowestPrivateSaleUserAssetId = (int?)null,
-						isXboxExclusiveItem = false,
-					},
-				});
-			}
-			
-			currentIndex++;
-			
-			// if we've gone through all items and still don't have enough, get more
-			if (currentIndex >= result.Count && visible.Count < numItems)
-			{
-				attempts++;
-				var additional = await services.assets.GetRecommendedItems(assetTypeId, contextAssetId, numItems + 10);
-				result.AddRange(additional.ToList());
-			}
+					assetId = c.assetId,
+					name = c.name,
+					price = c.price,
+					premiumPrice = (int?) null,
+					absoluteUrl = $"/catalog/{c.assetId}/--",
+				},
+				creator = new
+				{
+					creatorId = c.creatorId,
+					creatorType = c.creatorType,
+					name = c.creatorName,
+					creatorProfileLink = c.creatorType == CreatorType.User
+						? $"/users/{c.creatorId}/profile"
+						: $"/groups/{c.creatorId}/--",
+				},
+				product = new
+				{
+					id = c.assetId,
+					priceInRobux = c.price,
+					isForsale = c.isForSale,
+					isPublicDomain = false, // todo
+					isResellable = c.isLimited || c.isLimitedUnique,
+					c.isLimited,
+					c.isLimitedUnique,
+					isRental = false,
+					bcRequirement = 0,
+					totalPrivateSales = 0, // todo = what is this?
+					offsaleDeadline = c.offsaleDeadline,
+					noPriceText = (c.isLimited || c.isLimitedUnique && !c.isForSale) ? "No Resellers" : null,
+					// below is intentionally empty
+					sellerId = 0,
+					sellerName = (string?)null,
+					lowestPrivateSaleUserAssetId = (int?)null,
+					isXboxExclusiveItem = false,
+				},
+			});
 		}
-
+		
+		// if we didn't get enough justreturn as is
 		return new
 		{
-			data = visible.Take(numItems).ToList(),
+			data = visibleItems
 		};
 	}
 

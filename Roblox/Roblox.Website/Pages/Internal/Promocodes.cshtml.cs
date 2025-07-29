@@ -56,18 +56,18 @@ public class Promocodes : RobloxPageModel
         {
             var url = $"{Roblox.Configuration.BaseUrl}/promocodes/redeem?code={WebUtility.UrlEncode(Code)}";
             var response = await client.GetAsync(url);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
+            var rescontent = await response.Content.ReadAsStringAsync();
+			
             if (response.IsSuccessStatusCode)
             {
-                Result = JsonConvert.DeserializeObject<PCResult>(responseContent);
+                Result = JsonConvert.DeserializeObject<PCResult>(rescontent);
                 Result.showResult = true;
                 return Page();
             }
 
             try
             {
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
+                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rescontent);
                 if (errorResponse?.errors != null && errorResponse.errors.Count > 0)
                 {
                     Result.success = false;

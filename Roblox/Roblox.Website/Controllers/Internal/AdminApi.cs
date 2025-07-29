@@ -2220,7 +2220,17 @@ public class AdminApiController : ControllerBase
     [HttpGet("assets/giveitem-circ"), StaffFilter(Access.GiveUserItem)]
     public async Task<IEnumerable<StaffUserAssetTrackEntry>> GetGiveItemCirc(long assetId, int limit)
     {
-        var transferTo = await services.users.GetUserIdFromUsername("BadDecisions");
+        long transferTo;
+		
+		try
+		{
+			transferTo = await services.users.GetUserIdFromUsername("BadDecisions");
+		}
+		catch (RecordNotFoundException)
+		{
+			throw new StaffException("BadDecisions doesn't exist, please create an account with ID 12 and BadDecisions as the username!");
+		}
+		
         return (await db.QueryAsync<StaffUserAssetTrackEntry>(
             "SELECT user_asset.id, user_asset.asset_id as assetId, user_asset.user_id as userId, u.username, user_asset.serial FROM user_asset INNER JOIN \"user\" u ON u.id = user_asset.user_id INNER JOIN \"user_ban\" ub ON ub.user_id = user_asset.user_id WHERE user_asset.asset_id = :asset_id AND ((u.status = :status AND ub.created_at <= :time_sub) OR u.id = :bad) AND user_asset.user_id != 1 ORDER BY user_asset.serial DESC NULLS LAST LIMIT :limit",
             new
