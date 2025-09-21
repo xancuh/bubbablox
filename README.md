@@ -4,7 +4,7 @@
     </p>
 </div>
 
-this guide will be mostly a mix of the original one, and some things i added.
+this guide isn't changed and the same one by srcookie
 
 (original guide by <a href="https://github.com/SrCookie450">SrCookie450</a>, changed and site fixed by <a href="https://github.com/harryzawg">harryzawg</a>)
 
