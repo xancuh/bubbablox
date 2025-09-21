@@ -22,6 +22,8 @@ this guide will be mostly a mix of the original one, and some things i added.
 
 ## database
 
+**Note: ```npm i``` and ```npx knex migrate:latest``` won't work since there are no migrations and there is no package.json**
+
 - open Command Prompt, and cd into your PostgreSQL folder. it should be at ```C:\Program Files\PostgreSQL\(your postgres version, if you followed the guide it will be 13)\bin```
 - copy the schema.sql file in ```api/sql``` to that PostgreSQL bin folder, then run in a Command Prompt window in that folder:
 
