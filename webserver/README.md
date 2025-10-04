@@ -1,2 +1,1 @@
-you dont really need a webserver if you aren't patching and using any clients..
-you dont need this if you dont know how to patch clients
+you need this for everything to work! (renderer, whatever. oh! as well as clients to render all of the assets)
