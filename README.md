@@ -6,7 +6,7 @@
 
 this guide isn't changed and the same one by srcookie
 
-(original guide by <a href="https://github.com/SrCookie450">SrCookie450</a>, changed and site fixed by <a href="https://github.com/harryzawg">harryzawg</a>)
+(original guide by <a href="https://github.com/SrCookie450">SrCookie450</a>, site fixed by <a href="https://github.com/harryzawg">harryzawg</a>)
 
 ## things you need
 
@@ -71,7 +71,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - update the client ID, secret and add your new redirect URLs that you just added in the portal to ```appsettings.json``` or else it won't work.
 
 ## almost done!
-
+i dont think you need to do the ns patch since its already compiled as roblox.com's domain. search for ns1 for good measure and make sure direction is all!
 - download [HxD](https://mh-nexus.de/en/downloads.php?product=HxD20) and drag the RCCService.exe file into it. make sure the domain you are using for this is exactly 10 characters, or it won't work correctly without a workaround (provided below).
 - the reason for this is the way that RCC was compiled, it was set to use Roblox's domain which is 10 characters. just replace it with your 10 char domain (CTRL + R, then do bb.zawg.ca then replace it with your domain. make sure your direction is all)
 - the only thing, is that you should search for ```NS1``` after closing the replace window and pressing ctrl + F and replacing your domain/bb.zawg.ca with roblox.com for each ns. so replace your.domain/bb.zawg.ca in ns1, with roblox.com and so on until ns3. [example](https://zawg.ca/assets/photos/demo1.png)
@@ -88,7 +88,7 @@ you should change GameServerAuthorization and the Authorization under Render in 
 **congrats, site is setup and made!**
 
 ## webserver
-
+note: this is important if you wanna upload assets and clients and stuff like that. ill soon put a tutorial on how to change the public key and priv key so it doesn't get mixed up with bubbablox's one!
 - change the directory root in ```webserver\apache\conf\extra\httpd-vhosts.conf``` to your actual webserver root location.
 - update everything in ```webserver\apache\conf\httpd.conf``` to your actual server root and directory locations.
 - go into ```webserver/root/game``` then go into join.ashx and change the bs.zawg.ca and sitetest.zawg.ca URL's to your website URL. so sitetest/bs.zawg.ca should just look like your domain. go through every file and change it.
