@@ -95,8 +95,8 @@ note: this is important if you wanna upload assets and clients and stuff like th
 - do the same for PlaceLauncher.ashx and the asset endpoints, so it can actually get assets from your site in game.
 - you should now be able to start the webserver, (```webserver\apache\bin\httpd.exe```) and connect using the client. (the webserver is required for Roblox assets as well, so make sure to start it!!)
 
-## client
+## client (please only follow this if you wanna use a client)
 
 - start the webserver
 - patch the client in HxD, the same way as RCC, then go to /game/get-join-script?placeid=(the place you want to join)
-- then go to the client's directory in CMD using CD, then do CLIENTNAME.exe (paste everything in the get join script endpoint after the client exe)
+- then go to the client's directory in CMD using CD, then do CLIENTNAME.exe (usually Bubbablox.exe if you're tryna use their client, make sure to change the keys) (paste everything in the get join script endpoint after the client exe)
