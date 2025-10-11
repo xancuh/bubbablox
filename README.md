@@ -4,12 +4,12 @@
     </p>
 </div>
 
-this guide isn't changed and the same one by srcookie
+This is the source of Bubbablox. Credits below:
 
 (original guide by <a href="https://github.com/SrCookie450">SrCookie450</a>, site fixed by <a href="https://github.com/harryzawg">harryzawg</a>)
 
 ## things you need
-
+> **make sure to use specifically these versions or else site no workie**
 - <a href="https://nodejs.org/dist/v18.16.1/node-v18.16.1-x64.msi">Node.js</a>, *to run the renderer/build panel*
 - <a href="https://sbp.enterprisedb.com/getfile.jsp?fileid=1258627">PostgreSQL</a>, *for the database*
 - <a href="https://builds.dotnet.microsoft.com/dotnet/Sdk/6.0.412/dotnet-sdk-6.0.412-win-x64.exe">.NET 6.0</a>, *to run the website*
