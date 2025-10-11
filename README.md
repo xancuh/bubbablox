@@ -29,27 +29,23 @@ this guide isn't changed and the same one by srcookie
 
 ```psql --username=** --dbname=* < schema.sql```
 
-- * = the name of the database you want to use, if this is your first time installing, use postgres
-- ** = your postgres username, default is postgres if you didn't set any in the setup
+- `*` = the name of the database you want to use, if this is your first time installing, use postgres
+- `**` = your postgres username, default is postgres if you didn't set any in the setup
 
 ## setting up
 
-- rename the ```appsettings.example.json``` file in ```Roblox/Roblox.Website``` to just ```appsettings.json```, then open it.
-- change the default POSTGRES line that looks like this:
-- ```"Postgres": "Host=127.0.0.1; Database=bubbabloxnew; Password=test; Username=postgres; Maximum Pool Size=20",```
+- rename the ```appsettings.example.json``` file in ```Roblox/Roblox.Website``` to ```appsettings.json```, then open it.
+- also rename the ```game-servers.example.json``` to ```game-servers.json```. do not edit anything inside of it.
+- make sure to edit the postgres line like this:
+- ```"Postgres": "Host=127.0.0.1; Database=*; Password=your postgres password; Username=**; Maximum Pool Size=20",```
+keep in mind:
+- ``*`` = the name of the database you want to use, if this is your first time installing, use postgres
+- ``**`` = your postgres username, default is postgres if you didn't set any in the setup
 
-to:
-
-``` "Postgres": "Host=127.0.0.1; Database=*; Password=your Postgres password; Username=**; Maximum Pool Size=20",```
-
-- * = the name of the database you want to use, if this is your first time installing, use postgres
-- ** = your postgres username, default is postgres if you didn't set any in the setup
-
-- press ```CTRL + H``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\``` to ```C:\\whereever your ECS folder is\\``` (make sure it's double slashed! so it should look like ```C:\\folder1\\folder2\\```)
+- press ```CTRL + H``` and change ```C:\\Users\\Admin\\Desktop\\Revival\\ecsr\\ecsrev-main\\services\\``` to ```C:\\whereever your folder is\\``` (make sure it's double slashed! so it should look like ```C:\\folder1\\folder2\\```)
 - you should update everything in the appsettings.json file to your configuration.
-- you should also rename ```game-servers.example.json``` to just ```game-servers.json```
 - go to ```services/renderer```, rename the file named ```config.example.json``` to ```config.json``` and change everything inside of it so it works with your main site and matches your appsettings.json.
-you should change GameServerAuthorization and the Authorization under Render in your appsettings.json to the Authorization in your renderer config.json.
+- **you must change GameServerAuthorization and the Authorization under Render in your appsettings.json to the Authorization in your renderer config.json.**
 
 ## thumbnails and frontend
 
@@ -71,13 +67,11 @@ you should change GameServerAuthorization and the Authorization under Render in 
 - update the client ID, secret and add your new redirect URLs that you just added in the portal to ```appsettings.json``` or else it won't work.
 
 ## almost done!
-i dont think you need to do the ns patch since its already compiled as roblox.com's domain. search for ns1 for good measure and make sure direction is all!
+i dont think you need to do the ns patch since its already compiled as roblox.com's domain. search for ns1 for good measure and make sure direction is all, then verify it's roblox.com!
 - download [HxD](https://mh-nexus.de/en/downloads.php?product=HxD20) and drag the RCCService.exe file into it. make sure the domain you are using for this is exactly 10 characters, or it won't work correctly without a workaround (provided below).
 - the reason for this is the way that RCC was compiled, it was set to use Roblox's domain which is 10 characters. just replace it with your 10 char domain (CTRL + R, then do bb.zawg.ca then replace it with your domain. make sure your direction is all)
 - the only thing, is that you should search for ```NS1``` after closing the replace window and pressing ctrl + F and replacing your domain/bb.zawg.ca with roblox.com for each ns. so replace your.domain/bb.zawg.ca in ns1, with roblox.com and so on until ns3. [example](https://zawg.ca/assets/photos/demo1.png)
-- do the same for the client, except the roblox NS patch as it is not needed for the client. change your public key and your private key, everything related to it.
-- you can easily find guides/tools for it. if you do, do the same for the webserver.
-- also, change the domain in AppSettings.xml to your domain. (for client and RCC)
+- also, change the domain in AppSettings.xml to your domain.
 
 ## the site should be setup at this point!
 - go into ```/services```, run ```runall.bat```, when it's all done go to your site at your domain.
@@ -96,7 +90,8 @@ note: this is important if you wanna upload assets and clients and stuff like th
 - you should now be able to start the webserver, (```webserver\apache\bin\httpd.exe```) and connect using the client. (the webserver is required for Roblox assets as well, so make sure to start it!!)
 
 ## client (please only follow this if you wanna use a client)
-
-- start the webserver
-- patch the client in HxD, the same way as RCC, then go to /game/get-join-script?placeid=(the place you want to join)
-- then go to the client's directory in CMD using CD, then do CLIENTNAME.exe (usually Bubbablox.exe if you're tryna use their client, make sure to change the keys) (paste everything in the get join script endpoint after the client exe)
+- as the RCC, patch it without the ns patch and also change the baseUrl from ```AppSettings.xml``` to your domain. (make sure to change bb.zawg.ca and nothing else!)
+- after patching the client, make sure to change your public and private keys. i dont specifically know where to change them but you can join the orc guide server. they have tons of guides on clients
+- make sure to start the webserver
+- go to /game/get-join-script?placeid=(the placeid of the place you want to join)
+- then go to the client's directory in CMD using CD, then do `THE ACTUAL CLIENT NAME.exe` (usually Bubbablox.exe if you're tryna use their client, make sure to change the keys) (paste everything in the get join script endpoint after the client exe)
